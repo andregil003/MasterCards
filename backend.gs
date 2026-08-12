@@ -451,8 +451,17 @@ function ensureSheet_(ss, name, headers) {
   }
 }
 
-function getMazos_()     { return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Mazos'); }
-function getTarjetas_()  { return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Tarjetas'); }
+function getMazos_() {
+  // Autodefensa: si aún no existe la hoja, se crea (evita "Argumento no válido: id")
+  var id = PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY);
+  if (!id) ensureDataStore_();
+  return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Mazos');
+}
+function getTarjetas_() {
+  var id = PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY);
+  if (!id) ensureDataStore_();
+  return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Tarjetas');
+}
 
 // ------------------------------------------------------------------
 // HELPERS
