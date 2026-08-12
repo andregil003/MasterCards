@@ -20,8 +20,8 @@
 // 1. CONFIG
 // ------------------------------------------------------------------
 var CONFIG = {
-  // ⚠️ URL /exec del deploy de Apps Script. Sustituir tras desplegar.
-  SCRIPT_URL: '',
+  // URL /exec del deploy de Apps Script.
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxjPVGw74cBjuj_GDMxvW2-PzFDifoj4c_kOW-4KsSM6SKDxuJw_HIEEnrbfzL3xc4c/exec',
   // Client ID OAuth (público). Verificado por el backend vía tokeninfo.
   GOOGLE_CLIENT_ID: '830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com',
   // Límites del motor de sync
