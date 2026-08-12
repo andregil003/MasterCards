@@ -85,6 +85,7 @@ var HEADERS = {
  */
 function doGet(e) {
   try {
+    ensureDataStore_(); // crea la hoja de cálculo en el primer acceso
     var params = (e && e.parameter) || {};
     // --- Compartir: endpoint público de solo lectura ---
     if (params.share_id) {
