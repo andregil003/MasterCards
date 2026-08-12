@@ -78,9 +78,9 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 - [x] `manifest.json`, `sw.js`
 - [x] Assets Font Awesome auto-hospedado + íconos PWA
 - [x] README.md final + `docs/06_DEPLOYMENT.md` completado
-- [ ] Apps Script desplegado (URL /exec pendiente)
+- [x] Apps Script desplegado (URL: `https://script.google.com/macros/s/AKfycbxjPVGw74cBjuj_GDMxvW2-PzFDifoj4c_kOW-4KsSM6SKDxuJw_HIEEnrbfzL3xc4c/exec`)
 - [x] OAuth Client ID registrado (hecho: `830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com`)
-- [ ] GitHub Pages activado
+- [x] GitHub Pages activado (`https://andregil003.github.io/MasterCards/`)
 - [ ] Checklist de verificación (`docs/07_CHECKLIST.md`)
 
 ## 6. Cómo verificar tu trabajo
