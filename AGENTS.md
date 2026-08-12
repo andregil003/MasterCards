@@ -71,15 +71,15 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 
 (Actualizar aquí a medida que avance el proyecto. Marca lo completado.)
 
-- [ ] Repositorio creado (público, `andregil003/MasterCards`)
-- [ ] Documentación (`AGENTS.md` + `docs/01…07`)
-- [ ] `backend.gs` (Web App Apps Script)
-- [ ] `index.html`, `style.css`, `app.js`
-- [ ] `manifest.json`, `sw.js`
-- [ ] Assets Font Awesome auto-hospedado + íconos PWA
-- [ ] README.md final + `docs/06_DEPLOYMENT.md` completado
+- [x] Repositorio creado (público, `andregil003/MasterCards`)
+- [x] Documentación (`AGENTS.md` + `docs/01…07`)
+- [x] `backend.gs` (Web App Apps Script)
+- [x] `index.html`, `style.css`, `app.js`
+- [x] `manifest.json`, `sw.js`
+- [x] Assets Font Awesome auto-hospedado + íconos PWA
+- [x] README.md final + `docs/06_DEPLOYMENT.md` completado
 - [ ] Apps Script desplegado (URL /exec pendiente)
-- [ ] OAuth Client ID registrado (hecho: `830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com`)
+- [x] OAuth Client ID registrado (hecho: `830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com`)
 - [ ] GitHub Pages activado
 - [ ] Checklist de verificación (`docs/07_CHECKLIST.md`)
 
