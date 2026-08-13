@@ -70,7 +70,8 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   `1080px`, los mazos van en grid de varias columnas, la barra inferior se
   oculta (navegación por el header) y el estudio/sheet/ajustes se centran. El
   logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con raya verde),
-  usado en login y en la cabecera de la app.
+  usado en la cabecera de la app (se retiró de las pantallas de login por
+  criterio visual del dueño).
 
 ## 4. Restricciones técnicas obligatorias
 

@@ -127,7 +127,8 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   `@media (min-width: 900px)` amplía `main` a 1080px, mazos en grid
   (auto-fill 280px), oculta la barra inferior (navegación por el header),
   FAB junto al contenedor y estudio/sheet/ajustes centrados. Logo oficial =
-  `assets/icons/icon-192.png` (tarjeta blanca con raya verde) en login y
-  cabecera.
+  `assets/icons/icon-192.png` (tarjeta blanca con raya verde) en la cabecera.
+- 2026-08-12: Se retira el logo grande de las pantallas de login/cuenta (se veía
+  mal); el logo queda solo como icono pequeño en la cabecera.
 - 2026-08-12: Unificación de espaciados (reglas `.btn.block + .btn.block`,
   márgenes de `.field-label`/`.error`, `hr` de Seguridad, `.login-links`).
