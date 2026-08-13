@@ -15,7 +15,7 @@
  * ============================================================
  */
 
-const CACHE = 'mastercards-v3';
+const CACHE = 'mastercards-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -61,6 +61,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
+  // Solo interceptamos requests http(s). Las de chrome-extension:// u otros
+  // esquemas no se pueden guardar en Cache API (darían TypeError) y no las
+  // necesitamos para el modo offline.
+  let protocol = '';
+  try { protocol = new URL(req.url).protocol; } catch (e) { protocol = ''; }
+  if (protocol !== 'http:' && protocol !== 'https:') return;
+
   // Navegaciones: network-first con fallback al índice (offline).
   if (req.mode === 'navigate') {
     event.respondWith(
@@ -83,7 +90,7 @@ self.addEventListener('fetch', (event) => {
         return fetch(req).then((res) => {
           if (res && res.status === 200 && res.type === 'basic') {
             const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
+            caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
           }
           return res;
         });
