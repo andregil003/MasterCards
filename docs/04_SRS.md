@@ -13,19 +13,27 @@
 
 ### 4.1.1 Tarjetas tipadas (desde 2026-08-12)
 
-Las tarjetas `abierta`, `opcion` y `texto` NO muestran los 4 botones; se
-gradúan a binario y se traducen a `q`:
+Las tarjetas `abierta`, `opcion`, `desplegable`, `escala`, `numero` y `texto`
+NO muestran los 4 botones; se gradúan a binario y se traducen a `q`:
 
 | Tipo | Cómo se responde | Correcto | Fallo |
 |------|------------------|----------|-------|
 | `abierta` | Se revela la respuesta y se pulsa «La sabía» / «No la sabía» | q=4 | q=1 |
 | `opcion` | Se pulsa una opción (una única oportunidad) | q=4 | q=1 |
+| `desplegable` | Se elige en un `<select>` y se pulsa «Comprobar» (una oportunidad) | q=4 | q=1 |
+| `escala` | Se pulsa un número del 1 al 10 (la respuesta esperada es ese entero) | q=4 | q=1 |
+| `numero` | Se escribe un número entero exacto y se pulsa «Comprobar» | q=4 | q=1 |
 | `texto` | Se escribe la respuesta y se pulsa «Comprobar» (comparación normalizada) | q=4 | q=1 |
 
 **Normalización de texto** (`normalizarTexto`): minúsculas, sin acentos
 (NFD + quitar combining marks), sin puntuación y con espacios colapsados.
 Ej.: `"¡Ámbar!"` → `ambar`. Usada para `texto` (respuesta) y para aceptar
 variantes en `opcion`.
+
+**Números** (`parseEntero`): la respuesta esperada de `escala` y `numero` debe
+ser un entero exacto (`isFinite` y sin decimales); `escala` además limita el
+rango a 1–10. Si la respuesta esperada no es válida, la tarjeta se degrada a
+`tarjeta` clásica en la importación.
 
 Las tarjetas tipadas SIEMPRE revelan la respuesta al acabar (aunque `revelar`
 esté en `final`) y dejan ~2,2 s para leer el feedback antes de avanzar.

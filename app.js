@@ -29,17 +29,27 @@ var CONFIG = {
   BACKOFF: [1000, 5000, 30000], // reintentos: 1s → 5s → 30s
   // SM-2
   SM2_MIN_EF: 1.3,
-  // Galería de íconos Font Awesome ofrecida al usuario (sin el prefijo "fa-")
+  // Galería de íconos Font Awesome ofrecida al usuario (sin el prefijo "fa-").
+  // OJO: solo iconos del set gratuito auto-hospedado en assets/fontawesome/.
   ICON_GALERY: [
     'brain', 'bolt', 'book', 'book-open', 'calculator', 'camera', 'car', 'cat',
     'cloud', 'code', 'compass', 'dog', 'dumbbell', 'earth-americas', 'feather',
     'flag', 'flask', 'football', 'gamepad', 'gem', 'globe', 'graduation-cap',
     'heart', 'history', 'language', 'leaf', 'lightbulb', 'location-dot', 'lock',
     'magnet', 'map', 'mountain', 'music', 'palette', 'paw', 'pen', 'plane',
-    'plant', 'puzzle-piece', 'rocket', 'scale-balanced', 'star', 'sword',
-    'terminal', 'tree', 'trophy', 'utensils', 'video', 'volcano',
+    'seedling', 'puzzle-piece', 'rocket', 'scale-balanced', 'star',
+    'shield-halved', 'terminal', 'tree', 'trophy', 'utensils', 'video', 'volcano',
     'wand-magic-sparkles'
   ],
+  // Categorías del selector de íconos (cada ícono aparece en UNA sola).
+  ICON_GROUPS: {
+    tech: ['brain', 'bolt', 'cloud', 'code', 'gamepad', 'terminal', 'video', 'wand-magic-sparkles'],
+    science: ['calculator', 'flask', 'lightbulb', 'magnet', 'rocket', 'volcano', 'earth-americas', 'mountain'],
+    nature: ['cat', 'dog', 'leaf', 'paw', 'seedling', 'tree', 'feather'],
+    objects: ['book', 'book-open', 'camera', 'gem', 'lock', 'map', 'palette', 'pen', 'scale-balanced', 'utensils'],
+    travel: ['car', 'compass', 'flag', 'globe', 'location-dot', 'plane'],
+    leisure: ['dumbbell', 'football', 'graduation-cap', 'heart', 'history', 'language', 'music', 'puzzle-piece', 'star', 'trophy']
+  },
   COLORS: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 };
 
@@ -62,7 +72,8 @@ var DEFAULT_SETTINGS = {
   limiteNuevas: 20,      // límite diario de tarjetas nuevas (5-100)
   orden: 'manual',       // manual | alfabetico
   idioma: 'auto',        // auto | es | en
-  favoritas: {}          // {cardId: true} — solo local, no se sincroniza
+  favoritas: {},         // {cardId: true} — solo local, no se sincroniza
+  nombre: ''             // nombre de pila para el saludo (solo local)
 };
 
 var DEFAULT_META = { ultimaSync: 0, nuevasHoy: { fecha: '', count: 0 } };
@@ -120,11 +131,19 @@ var I18N = {
       tipo_tarjeta: 'Tarjeta clásica',
       tipo_abierta: 'Pregunta abierta',
       tipo_opcion: 'Opción múltiple',
+      tipo_desplegable: 'Lista desplegable',
+      tipo_escala: 'Escala 1–10',
+      tipo_numero: 'Número exacto',
       tipo_texto: 'Texto libre',
       opciones_label: 'Opciones (una por línea; marca la correcta con *)',
       err_opciones: 'Marca la correcta con * y añade al menos 2 opciones',
+      err_num_required: 'La respuesta debe ser un número entero exacto',
+      err_escala_range: 'La respuesta de la escala debe ser un número del 1 al 10',
       check: 'Comprobar',
       type_answer: 'Escribe tu respuesta',
+      type_number: 'Escribe un número',
+      choose_option: 'Selecciona…',
+      escala_hint: 'Elige un número del 1 al 10.',
       reveal_answer: 'Ver respuesta',
       knew_it: 'La sabía',
       didnt_know: 'No la sabía',
@@ -135,7 +154,12 @@ var I18N = {
       icon_label: 'Ícono',
       color_label: 'Color de acento',
       tab_json: 'Pegar JSON',
-      tab_single: 'Tarjeta individual',
+      tab_single: 'Tarjetas manuales',
+      manual_cards_hint: 'Añade una o varias tarjetas. Cada bloque tiene su propio tipo.',
+      add_card: 'Añadir tarjeta',
+      card_n: 'Tarjeta {a}',
+      opcion_ph: '*Madrid\nBarcelona',
+      err_no_cards: 'Añade al menos una tarjeta o pega un JSON',
       json_label: 'JSON de la IA',
       json_ph: '[{"q":"¿Qué significa PWA?","a":"Progressive Web App","e":"PWA = aplicación web instalable"},{"q":"2+2","a":"4"}]',
       question_label: 'Pregunta',
@@ -208,6 +232,28 @@ var I18N = {
       wipe_confirm_text: 'Se borrarán mazos, tarjetas y cola de sync de ESTE dispositivo. No afecta a la nube.',
       wipe_ok: 'Datos locales borrados',
       install_btn: 'Instalar app',
+      // Saludo y nombre
+      greeting_morning: 'Buenos días, {a}',
+      greeting_afternoon: 'Buenas tardes, {a}',
+      greeting_evening: 'Buenas noches, {a}',
+      greeting_morning_no_name: 'Buenos días',
+      greeting_afternoon_no_name: 'Buenas tardes',
+      greeting_evening_no_name: 'Buenas noches',
+      your_name: 'Tu nombre',
+      your_name_ph: 'Ej: Ana',
+      your_name_hint: 'Lo usamos para saludarte en el inicio.',
+      name_modal_title: '¿Cómo te llamas?',
+      name_modal_text: 'Lo usaremos para saludarte en el inicio. Puedes cambiarlo en Ajustes.',
+      name_modal_skip: 'Omitir',
+      name_saved: 'Nombre guardado',
+      // Iconos
+      icon_choose: 'Elegir ícono',
+      icon_cat_tech: 'Tecnología',
+      icon_cat_science: 'Ciencia',
+      icon_cat_nature: 'Naturaleza',
+      icon_cat_objects: 'Objetos',
+      icon_cat_travel: 'Viajes',
+      icon_cat_leisure: 'Ocio',
       // Instalación PWA
       install_banner: 'Instala MasterCards en tu dispositivo',
       install_now: 'Instalar',
@@ -227,15 +273,17 @@ var I18N = {
       imported: 'Mazo importado',
       // Prompt para IA (copiar)
       prompt_intro: 'Actúa como un experto creando tarjetas flash. Crea un mazo sobre el tema "{a}" con tarjetas pregunta/respuesta claras y concisas.',
-      prompt_rule1: 'Genera EXACTAMENTE este formato JSON, sin texto adicional:',
-      prompt_rule2: 'Usa "q" para la pregunta, "a" para la respuesta y "e" (opcional) para una breve explicación. Tipos opcionales: "t":"opcion" con "o":[{"t":"Opción","c":true}] (una correcta), "t":"texto" (se escribe la respuesta) y "t":"abierta" (autoevaluación).',
-      prompt_rule3: 'Entre 10 y 30 tarjetas, en español.',
+      prompt_rule1: 'Genera EXACTAMENTE este formato JSON, sin texto adicional (claves "q" pregunta, "a" respuesta, "e" explicación opcional, "t" tipo y "o" opciones):',
+      prompt_rule2: 'Reglas: (1) En "opcion" y "desplegable" usa "o":[{"t":"Opción","c":true}…] con EXACTAMENTE UNA correcta ("c":true); (2) "escala" = respuesta entera del 1 al 10 y "numero" = respuesta entera exacta; (3) "texto" se responde escribiendo y "abierta" es autoevaluación; (4) las respuestas deben ser 100% correctas y concisas.',
+      prompt_rule3: 'Entre 10 y 30 tarjetas, en español, variando los tipos. Todo el JSON en una sola línea por tarjeta.',
       // Cuentas MasterCards (usuario + contraseña)
       or: 'o',
       username: 'Usuario',
-      username_ph: 'mi_usuario',
+      username_ph: 'usuario',
       username_hint: '3–30 caracteres: letras, números, . _ -',
       password: 'Contraseña',
+      pw_show: 'Mostrar contraseña',
+      pw_hide: 'Ocultar contraseña',
       repeat_password: 'Repetir contraseña',
       login_btn: 'Iniciar sesión',
       create_account: 'Crear cuenta',
@@ -346,11 +394,19 @@ var I18N = {
       tipo_tarjeta: 'Classic card',
       tipo_abierta: 'Open question',
       tipo_opcion: 'Multiple choice',
+      tipo_desplegable: 'Dropdown',
+      tipo_escala: '1–10 scale',
+      tipo_numero: 'Exact number',
       tipo_texto: 'Free text',
       opciones_label: 'Options (one per line; mark the correct one with *)',
       err_opciones: 'Mark the correct one with * and add at least 2 options',
+      err_num_required: 'The answer must be an exact whole number',
+      err_escala_range: 'The scale answer must be a number from 1 to 10',
       check: 'Check',
       type_answer: 'Type your answer',
+      type_number: 'Type a number',
+      choose_option: 'Select…',
+      escala_hint: 'Pick a number from 1 to 10.',
       reveal_answer: 'Show answer',
       knew_it: 'I knew it',
       didnt_know: "I didn't know",
@@ -361,7 +417,12 @@ var I18N = {
       icon_label: 'Icon',
       color_label: 'Accent color',
       tab_json: 'Paste JSON',
-      tab_single: 'Single card',
+      tab_single: 'Manual cards',
+      manual_cards_hint: 'Add one or more cards. Each block has its own type.',
+      add_card: 'Add card',
+      card_n: 'Card {a}',
+      opcion_ph: '*Correct\nIncorrect',
+      err_no_cards: 'Add at least one card or paste JSON',
       json_label: 'AI JSON',
       json_ph: '[{"q":"What does PWA mean?","a":"Progressive Web App","e":"PWA = installable web app"},{"q":"2+2","a":"4"}]',
       question_label: 'Question',
@@ -434,6 +495,28 @@ var I18N = {
       wipe_confirm_text: 'Decks, cards and the sync queue on THIS device will be erased. Your cloud data is not affected.',
       wipe_ok: 'Local data erased',
       install_btn: 'Install app',
+      // Greeting and name
+      greeting_morning: 'Good morning, {a}',
+      greeting_afternoon: 'Good afternoon, {a}',
+      greeting_evening: 'Good evening, {a}',
+      greeting_morning_no_name: 'Good morning',
+      greeting_afternoon_no_name: 'Good afternoon',
+      greeting_evening_no_name: 'Good evening',
+      your_name: 'Your name',
+      your_name_ph: 'e.g. Ana',
+      your_name_hint: 'We use it to greet you on the home screen.',
+      name_modal_title: 'What is your name?',
+      name_modal_text: 'We will use it to greet you on the home screen. You can change it in Settings.',
+      name_modal_skip: 'Skip',
+      name_saved: 'Name saved',
+      // Icons
+      icon_choose: 'Choose icon',
+      icon_cat_tech: 'Tech',
+      icon_cat_science: 'Science',
+      icon_cat_nature: 'Nature',
+      icon_cat_objects: 'Objects',
+      icon_cat_travel: 'Travel',
+      icon_cat_leisure: 'Leisure',
       // PWA install
       install_banner: 'Install MasterCards on your device',
       install_now: 'Install',
@@ -453,15 +536,17 @@ var I18N = {
       imported: 'Deck imported',
       // AI prompt (copy)
       prompt_intro: 'Act as an expert flashcard creator. Make a deck about "{a}" with clear, concise question/answer cards.',
-      prompt_rule1: 'Output EXACTLY this JSON format, with no extra text:',
-      prompt_rule2: 'Use "q" for the question, "a" for the answer and "e" (optional) for a short explanation. Optional types: "t":"opcion" with "o":[{"t":"Option","c":true}] (one correct), "t":"texto" (type the answer) and "t":"abierta" (self-graded).',
-      prompt_rule3: 'Between 10 and 30 cards, in English.',
+      prompt_rule1: 'Output EXACTLY this JSON format, with no extra text (keys "q" question, "a" answer, "e" optional explanation, "t" type and "o" options):',
+      prompt_rule2: 'Rules: (1) For "opcion" and "desplegable" use "o":[{"t":"Option","c":true}…] with EXACTLY ONE correct ("c":true); (2) "escala" = whole answer from 1 to 10 and "numero" = exact whole answer; (3) "texto" is answered by typing and "abierta" is self-graded; (4) answers must be 100% correct and concise.',
+      prompt_rule3: 'Between 10 and 30 cards, in English, mixing the types. Output one card per line.',
       // MasterCards accounts (username + password)
       or: 'or',
       username: 'Username',
-      username_ph: 'my_username',
+      username_ph: 'username',
       username_hint: '3–30 chars: letters, numbers, . _ -',
       password: 'Password',
+      pw_show: 'Show password',
+      pw_hide: 'Hide password',
       repeat_password: 'Repeat password',
       login_btn: 'Sign in',
       create_account: 'Create account',
@@ -596,6 +681,16 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/** Convierte un color hex en rgba con la opacidad dada (para fondos suaves). */
+function withAlpha(color, alpha) {
+  var hex = String(color || '#22c55e').replace('#', '');
+  if (hex.length !== 6) return color;
+  var r = parseInt(hex.substr(0, 2), 16);
+  var g = parseInt(hex.substr(2, 2), 16);
+  var b = parseInt(hex.substr(4, 2), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
 /**
  * Markdown LIGERO (con escape HTML previo).
  * Soporta: **negrita**, *cursiva*, `código` y líneas con "- " (lista).
@@ -649,6 +744,33 @@ function toast(msg) {
   toast._t = setTimeout(function () { el.classList.add('hidden'); }, 2600);
 }
 
+/** Saludo según la hora del día: mañana 5–12, tarde 12–20, noche 20–5. */
+function saludoDeLaHora() {
+  var h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 20) return 'afternoon';
+  return 'evening';
+}
+
+/** Rellena el saludo del dashboard ("Buenos días, {nombre}"). */
+function renderGreeting() {
+  var el = document.getElementById('greeting');
+  if (!el) return;
+  var nombre = (Store.settings().nombre || '').trim();
+  var key = 'greeting_' + saludoDeLaHora() + (nombre ? '' : '_no_name');
+  el.textContent = nombre ? t(key, { a: nombre }) : t(key);
+}
+
+/** Modal único: pide el nombre la primera vez (para el saludo). */
+function maybeAskName() {
+  if ((Store.settings().nombre || '').trim()) return;
+  var modal = document.getElementById('name-modal');
+  if (!modal) return;
+  document.getElementById('name-modal-input').value = '';
+  modal.classList.remove('hidden');
+  setTimeout(function () { document.getElementById('name-modal-input').focus(); }, 60);
+}
+
 /** Modal de confirmación. Devuelve Promise<boolean>. */
 function confirmBox(title, text, okLabel) {
   return new Promise(function (resolve) {
@@ -668,6 +790,42 @@ function bindModal() {
   document.getElementById('modal-cancel').addEventListener('click', function () {
     document.getElementById('modal').classList.add('hidden');
     confirmBox._resolve && confirmBox._resolve(false);
+  });
+}
+
+/** Botones del modal de nombre (saludo). */
+function bindNameModal() {
+  var modal = document.getElementById('name-modal');
+  if (!modal) return;
+  document.getElementById('name-modal-ok').addEventListener('click', function () {
+    var nombre = document.getElementById('name-modal-input').value.trim().slice(0, 40);
+    if (nombre) {
+      var s = Store.settings();
+      s.nombre = nombre;
+      Store.setSettings(s);
+      renderGreeting();
+    }
+    modal.classList.add('hidden');
+  });
+  document.getElementById('name-modal-skip').addEventListener('click', function () {
+    modal.classList.add('hidden');
+  });
+  document.getElementById('name-modal-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('name-modal-ok').click(); }
+  });
+}
+
+/** Botón ver/ocultar en los campos de contraseña (privacidad). */
+function initPasswordToggles() {
+  document.querySelectorAll('.pw-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var field = btn.parentElement.querySelector('input');
+      if (!field) return;
+      var show = field.type === 'password';
+      field.type = show ? 'text' : 'password';
+      btn.innerHTML = '<i class="fa-solid fa-' + (show ? 'eye-slash' : 'eye') + '"></i>';
+      btn.setAttribute('aria-label', t(show ? 'pw_hide' : 'pw_show'));
+    });
   });
 }
 
@@ -1629,7 +1787,25 @@ function estaVencida(card) { return !!card.proximaRevision && card.proximaRevisi
 // Tipos de tarjeta (funciones puras, cubiertas en scripts/test.js)
 // ------------------------------------------------------------------
 
-var TIPOS_CARD = ['tarjeta', 'abierta', 'opcion', 'texto'];
+var TIPOS_CARD = ['tarjeta', 'abierta', 'opcion', 'texto', 'desplegable', 'escala', 'numero'];
+
+/** Tipos que guardan sus opciones [{texto,correcta}] (opción múltiple y desplegable). */
+function tipoUsaOpciones(tipo) { return tipo === 'opcion' || tipo === 'desplegable'; }
+
+/** Tipos que se corrigen automáticamente al responder (q=4/q=1). */
+function tipoAuto(tipo) { return tipo === 'opcion' || tipo === 'desplegable' || tipo === 'escala' || tipo === 'numero' || tipo === 'texto'; }
+
+/** Parsea un entero exacto desde la respuesta esperada. Devuelve null si no es válido. */
+function parseEntero(s) {
+  var n = Number(String(s || '').trim());
+  return (s !== null && s !== undefined && String(s).trim() !== '' && isFinite(n) && Math.floor(n) === n) ? n : null;
+}
+
+/** Valida la respuesta esperada de escala/número: debe ser un entero exacto. */
+function respuestaNumValida(respuesta) {
+  var n = parseEntero(respuesta);
+  return n !== null && n >= 1 && n <= 10;
+}
 
 /** Normaliza texto para comparar respuestas: minúsculas, sin tildes, sin puntuación. */
 function normalizarTexto(s) {
@@ -1774,6 +1950,8 @@ var Study = {
     document.getElementById('edit-panel').hidden = true;
     Study.renderAnswers(card);
     document.getElementById('card-icon').className = 'fa-solid fa-' + (card.icono || 'bolt') + ' card-deco';
+    var deckFor = Store.deckById(card.mazoId);
+    document.getElementById('card-icon').style.color = (deckFor && deckFor.iconoColor) || '#22c55e';
     document.getElementById('card-q').innerHTML = md(card.pregunta);
     document.getElementById('card-a').innerHTML = md(card.respuesta);
     var why = document.getElementById('card-e');
@@ -1797,13 +1975,14 @@ var Study = {
     var editTipo = document.getElementById('edit-tipo');
     editTipo.value = TIPOS_CARD.indexOf(card.tipo) !== -1 ? card.tipo : 'tarjeta';
     document.getElementById('edit-o').value = opcionesParaEditar(card);
-    document.getElementById('edit-opciones-wrap').hidden = editTipo.value !== 'opcion';
+    document.getElementById('edit-opciones-wrap').hidden = !tipoUsaOpciones(editTipo.value);
   },
 
   /** Tipo efectivo de la tarjeta (con datos válidos). */
   tipoDe: function (card) {
-    if (card.tipo === 'opcion' && card.opciones && card.opciones.length >= 2) return 'opcion';
+    if (tipoUsaOpciones(card.tipo) && card.opciones && card.opciones.length >= 2) return card.tipo;
     if (card.tipo === 'texto' || card.tipo === 'abierta') return card.tipo;
+    if (card.tipo === 'escala' || card.tipo === 'numero') return card.tipo;
     return 'tarjeta';
   },
 
@@ -1834,6 +2013,80 @@ var Study = {
         b.addEventListener('click', function () { Study.gradeOption(card, idx, b, wrap); });
         wrap.appendChild(b);
       });
+    } else if (tipo === 'desplegable') {
+      var sel = document.createElement('select');
+      sel.className = 'input';
+      var ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = t('choose_option');
+      ph.disabled = true;
+      sel.appendChild(ph);
+      card.opciones.forEach(function (o, i) {
+        var opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = o.texto;
+        sel.appendChild(opt);
+      });
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn primary';
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + t('check');
+      var row = document.createElement('div');
+      row.className = 'texto-check-row';
+      row.appendChild(sel);
+      row.appendChild(btn);
+      wrap.appendChild(row);
+      function doSelect() {
+        if (btn.disabled) return;
+        var ok = sel.value !== '' && !!card.opciones[Number(sel.value)].correcta;
+        Study.gradeSelect(card, ok, sel, btn, row);
+      }
+      btn.addEventListener('click', doSelect);
+    } else if (tipo === 'escala') {
+      var hint = document.createElement('p');
+      hint.className = 'muted small';
+      hint.textContent = t('escala_hint');
+      wrap.appendChild(hint);
+      var nums = document.createElement('div');
+      nums.className = 'escala-row';
+      for (var v = 1; v <= 10; v++) {
+        (function (val) {
+          var nb = document.createElement('button');
+          nb.type = 'button';
+          nb.className = 'escala-btn';
+          nb.textContent = String(val);
+          nb.addEventListener('click', function () { Study.gradeEscala(card, val); });
+          nums.appendChild(nb);
+        })(v);
+      }
+      wrap.appendChild(nums);
+    } else if (tipo === 'numero') {
+      var ninp = document.createElement('input');
+      ninp.type = 'number';
+      ninp.inputMode = 'numeric';
+      ninp.className = 'input';
+      ninp.placeholder = t('type_number');
+      var nbtn = document.createElement('button');
+      nbtn.type = 'button';
+      nbtn.className = 'btn primary';
+      nbtn.innerHTML = '<i class="fa-solid fa-check"></i> ' + t('check');
+      var nrow = document.createElement('div');
+      nrow.className = 'texto-check-row';
+      nrow.appendChild(ninp);
+      nrow.appendChild(nbtn);
+      wrap.appendChild(nrow);
+      function doNumero() {
+        if (nbtn.disabled) return;
+        var ok = ninp.value.trim() !== '' &&
+          parseEntero(ninp.value) !== null &&
+          parseEntero(ninp.value) === parseEntero(card.respuesta);
+        Study.gradeText(card, ok, ninp, nbtn, nrow);
+      }
+      nbtn.addEventListener('click', doNumero);
+      ninp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); doNumero(); }
+      });
+      setTimeout(function () { ninp.focus(); }, 60);
     } else if (tipo === 'texto') {
       var inp = document.createElement('input');
       inp.type = 'text';
@@ -1944,6 +2197,37 @@ var Study = {
     Study.answer(ok ? 4 : 1);
   },
 
+  /** Corrige un desplegable. */
+  gradeSelect: function (card, ok, sel, btn, row) {
+    if (Study._answered) return;
+    btn.disabled = true;
+    sel.disabled = true;
+    row.classList.add(ok ? 'right' : 'wrong');
+    if (!ok) {
+      var right = card.opciones.filter(function (o) { return o.correcta; })[0];
+      if (right) {
+        var correct = document.createElement('span');
+        correct.className = 'texto-correcta';
+        correct.textContent = right.texto;
+        row.appendChild(correct);
+      }
+    }
+    Study.answer(ok ? 4 : 1);
+  },
+
+  /** Corrige una escala 1-10. */
+  gradeEscala: function (card, val) {
+    if (Study._answered) return;
+    var expected = parseEntero(card.respuesta);
+    var ok = expected !== null && val === expected;
+    document.querySelectorAll('.escala-btn').forEach(function (b) {
+      b.disabled = true;
+      if (b.textContent === String(expected)) b.classList.add('right');
+      if (b.textContent === String(val) && !ok) b.classList.add('wrong');
+    });
+    Study.answer(ok ? 4 : 1);
+  },
+
   /** Respuesta del usuario. q: 1=Otra vez/No, 3=Difícil, 4=Bien/Sí, 5=Fácil. */
   answer: function (q) {
     var card = Study.queue[Study.index];
@@ -2040,15 +2324,22 @@ var Study = {
     var now = Date.now();
     var tipo = document.getElementById('edit-tipo').value;
     if (TIPOS_CARD.indexOf(tipo) === -1) tipo = 'tarjeta';
+    var pregunta = document.getElementById('edit-q').value;
+    var respuesta = document.getElementById('edit-a').value;
+    var explicacion = document.getElementById('edit-e').value;
     var opciones = null;
-    if (tipo === 'opcion') {
+    if (tipoUsaOpciones(tipo)) {
       opciones = parseLineasOpciones(document.getElementById('edit-o').value);
       if (!opciones) { toast(t('err_opciones')); return; }
     }
+    if (tipo === 'escala' || tipo === 'numero') {
+      if (!respuesta.trim() || parseEntero(respuesta) === null) { toast(t('err_num_required')); return; }
+      if (tipo === 'escala' && !respuestaNumValida(respuesta)) { toast(t('err_escala_range')); return; }
+    }
     var updated = Object.assign({}, card, {
-      pregunta: document.getElementById('edit-q').value,
-      respuesta: document.getElementById('edit-a').value,
-      explicacion: document.getElementById('edit-e').value,
+      pregunta: pregunta,
+      respuesta: respuesta,
+      explicacion: explicacion,
       tipo: tipo,
       opciones: opciones,
       updatedAt: now
@@ -2209,8 +2500,8 @@ var UI = {
       if (s.nuev) meta.push('<span class="new">' + esc(t('meta_new', { a: s.nuev })) + '</span>');
       if (!meta.length) meta.push('<span>' + esc(t('meta_total', { a: s.total })) + '</span>');
       el.innerHTML =
-        '<div class="deck-icon" style="background:' + (d.color || '#22c55e') + '">' +
-          '<i class="fa-solid fa-' + (d.icono || 'layer-group') + '"></i></div>' +
+        '<div class="deck-icon" style="background:' + withAlpha(d.color || '#22c55e', 0.16) + ';border:1px solid ' + withAlpha(d.color || '#22c55e', 0.4) + '">' +
+          '<i class="fa-solid fa-' + (d.icono || 'layer-group') + '" style="color:' + (d.iconoColor || '#22c55e') + '"></i></div>' +
         '<div class="deck-info">' +
           '<div class="deck-name">' + esc(d.nombre) + '</div>' +
           '<div class="deck-meta">' + meta.join(' · ') + '</div></div>' +
@@ -2239,7 +2530,7 @@ var UI = {
 
   // ---------- Crear mazo ----------
   initCreateDeck: function () {
-    UI.renderIconPicker('deck-icon-picker', 'deck-icon', 'layer-group');
+    UI.renderIconPicker('deck-icon-picker', 'deck-icon', 'layer-group', CONFIG.COLORS[0]);
     UI.renderColorPicker('deck-color-picker', 'deck-color', CONFIG.COLORS[0]);
 
     document.getElementById('tab-json').addEventListener('click', function () {
@@ -2253,39 +2544,185 @@ var UI = {
       document.getElementById('tab-json').classList.remove('active');
       document.getElementById('panel-single').hidden = false;
       document.getElementById('panel-json').hidden = true;
+      if (!document.querySelectorAll('#manual-cards-list .manual-card-block').length) {
+        UI.createManualBlock();
+      }
     });
 
     document.getElementById('btn-create-deck').addEventListener('click', UI.createDeck);
 
-    // Tipo de tarjeta individual → muestra/oculta el editor de opciones
-    function bindTipo(selId, wrapId) {
-      var sel = document.getElementById(selId);
-      var wrap = document.getElementById(wrapId);
-      sel.addEventListener('change', function () { wrap.hidden = sel.value !== 'opcion'; });
-    }
-    bindTipo('single-tipo', 'single-opciones-wrap');
-    bindTipo('edit-tipo', 'edit-opciones-wrap');
+    document.getElementById('btn-add-card').addEventListener('click', function () {
+      UI.createManualBlock();
+    });
+
+    // Editor de tarjeta en estudio: muestra/oculta opciones según el tipo
+    document.getElementById('edit-tipo').addEventListener('change', function () {
+      document.getElementById('edit-opciones-wrap').hidden = !tipoUsaOpciones(this.value);
+    });
   },
 
-  renderIconPicker: function (containerId, key, current) {
+  /** Añade un bloque de tarjeta manual (tipo + pregunta + respuesta + …). */
+  createManualBlock: function (value) {
+    var list = document.getElementById('manual-cards-list');
+    var wrap = document.createElement('div');
+    wrap.className = 'manual-card-block';
+    var tipos = TIPOS_CARD.map(function (tp) {
+      return '<option value="' + tp + '">' + esc(t('tipo_' + tp)) + '</option>';
+    }).join('');
+    wrap.innerHTML =
+      '<div class="manual-card-head">' +
+        '<span class="manual-card-num">' + esc(t('card_n', { a: 1 })) + '</span>' +
+        '<button type="button" class="icon-btn manual-card-del" aria-label="' + esc(t('delete_aria')) + '"><i class="fa-solid fa-xmark"></i></button>' +
+      '</div>' +
+      '<label class="field-label">' + esc(t('card_type')) + '</label>' +
+      '<select class="input m-tipo">' + tipos + '</select>' +
+      '<div class="m-opciones-wrap" hidden>' +
+        '<label class="field-label">' + esc(t('opciones_label')) + '</label>' +
+        '<textarea class="input textarea m-o" rows="3" placeholder="' + esc(t('opcion_ph')) + '"></textarea>' +
+      '</div>' +
+      '<label class="field-label">' + esc(t('question_label')) + '</label>' +
+      '<textarea class="input textarea m-q" rows="2"></textarea>' +
+      '<label class="field-label">' + esc(t('answer_label')) + '</label>' +
+      '<textarea class="input textarea m-a" rows="2"></textarea>' +
+      '<label class="field-label">' + esc(t('explanation_label')) + ' <span class="muted">' + esc(t('optional')) + '</span></label>' +
+      '<textarea class="input textarea m-e" rows="2"></textarea>';
+    var tipoSel = wrap.querySelector('.m-tipo');
+    var optsWrap = wrap.querySelector('.m-opciones-wrap');
+    tipoSel.addEventListener('change', function () {
+      optsWrap.hidden = !tipoUsaOpciones(tipoSel.value);
+    });
+    if (value) {
+      tipoSel.value = TIPOS_CARD.indexOf(value.t) !== -1 ? value.t : 'tarjeta';
+      optsWrap.hidden = !tipoUsaOpciones(tipoSel.value);
+      wrap.querySelector('.m-q').value = value.q || '';
+      wrap.querySelector('.m-a').value = value.a || '';
+      wrap.querySelector('.m-e').value = value.e || '';
+      wrap.querySelector('.m-o').value = value.o || '';
+    }
+    wrap.querySelector('.manual-card-del').addEventListener('click', function () {
+      wrap.remove();
+      UI.renumberManual();
+    });
+    list.appendChild(wrap);
+    UI.renumberManual();
+    return wrap;
+  },
+
+  /** Renumera los bloques visibles de tarjetas manuales. */
+  renumberManual: function () {
+    var list = document.getElementById('manual-cards-list');
+    Array.prototype.forEach.call(list.children, function (b, i) {
+      var n = b.querySelector('.manual-card-num');
+      if (n) n.textContent = t('card_n', { a: i + 1 });
+    });
+  },
+
+  renderIconPicker: function (containerId, key, current, currentColor) {
     var container = document.getElementById(containerId);
     container.innerHTML = '';
-    var sel = current || CONFIG.ICON_GALERY[0];
-    CONFIG.ICON_GALERY.forEach(function (ic) {
+    UI._pickers = UI._pickers || {};
+    UI._pickers[key] = current || CONFIG.ICON_GALERY[0];
+    UI._pickers[key + '-color'] = currentColor || CONFIG.COLORS[0];
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'icon-sel';
+    var ic = document.createElement('i');
+    ic.className = 'fa-solid fa-' + UI._pickers[key];
+    ic.style.color = UI._pickers[key + '-color'];
+    btn.appendChild(ic);
+    var label = document.createElement('span');
+    label.className = 'icon-sel-label';
+    label.textContent = t('icon_choose');
+    btn.appendChild(label);
+    var caret = document.createElement('i');
+    caret.className = 'fa-solid fa-chevron-down icon-sel-caret';
+    btn.appendChild(caret);
+
+    var panel = document.createElement('div');
+    panel.className = 'icon-panel';
+    panel.hidden = true;
+
+    function paint() {
+      ic.className = 'fa-solid fa-' + UI._pickers[key];
+      ic.style.color = UI._pickers[key + '-color'];
+      panel.querySelectorAll('.icon-opt').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.ic === UI._pickers[key]);
+        b.querySelector('i').style.color = UI._pickers[key + '-color'];
+      });
+      panel.querySelectorAll('.color-opt').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.color === UI._pickers[key + '-color']);
+      });
+    }
+
+    btn.addEventListener('click', function () {
+      panel.hidden = !panel.hidden;
+    });
+
+    // Chips de categoría (se muestra una categoría a la vez)
+    var chips = document.createElement('div');
+    chips.className = 'icon-chips';
+    var cats = Object.keys(CONFIG.ICON_GROUPS);
+    var activeCat = cats[0];
+    cats.forEach(function (cat, ci) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'icon-chip' + (ci === 0 ? ' active' : '');
+      chip.textContent = t('icon_cat_' + cat);
+      chip.addEventListener('click', function () {
+        activeCat = cat;
+        chips.querySelectorAll('.icon-chip').forEach(function (c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+        grid.innerHTML = '';
+        renderGrid();
+      });
+      chips.appendChild(chip);
+    });
+
+    // Cuadrícula de íconos de la categoría activa
+    var grid = document.createElement('div');
+    grid.className = 'icon-grid';
+    function renderGrid() {
+      CONFIG.ICON_GROUPS[activeCat].forEach(function (icn) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'icon-opt' + (icn === UI._pickers[key] ? ' active' : '');
+        b.dataset.ic = icn;
+        var i = document.createElement('i');
+        i.className = 'fa-solid fa-' + icn;
+        i.style.color = UI._pickers[key + '-color'];
+        b.appendChild(i);
+        b.addEventListener('click', function () {
+          UI._pickers[key] = icn;
+          panel.hidden = true;
+          paint();
+        });
+        grid.appendChild(b);
+      });
+    }
+    renderGrid();
+
+    // Colores del ícono (independiente del color de acento del mazo)
+    var colorRow = document.createElement('div');
+    colorRow.className = 'color-picker icon-color-row';
+    CONFIG.COLORS.forEach(function (color) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'icon-opt' + (ic === sel ? ' active' : '');
-      b.innerHTML = '<i class="fa-solid fa-' + ic + '"></i>';
+      b.className = 'color-opt' + (color === UI._pickers[key + '-color'] ? ' active' : '');
+      b.dataset.color = color;
+      b.style.background = color;
       b.addEventListener('click', function () {
-        container.querySelectorAll('.icon-opt').forEach(function (x) { x.classList.remove('active'); });
-        b.classList.add('active');
-        UI._pickers = UI._pickers || {};
-        UI._pickers[key] = ic;
+        UI._pickers[key + '-color'] = color;
+        paint();
       });
-      container.appendChild(b);
+      colorRow.appendChild(b);
     });
-    UI._pickers = UI._pickers || {};
-    UI._pickers[key] = sel;
+
+    panel.appendChild(chips);
+    panel.appendChild(grid);
+    panel.appendChild(colorRow);
+    container.appendChild(btn);
+    container.appendChild(panel);
   },
 
   renderColorPicker: function (containerId, key, current) {
@@ -2331,16 +2768,26 @@ var UI = {
         return;
       }
     } else {
-      var q = document.getElementById('single-q').value.trim();
-      var a = document.getElementById('single-a').value.trim();
-      if (!q || !a) { toast(t('err_qa_required')); return; }
-      var tipo = document.getElementById('single-tipo').value;
-      var opciones = null;
-      if (tipo === 'opcion') {
-        opciones = parseLineasOpciones(document.getElementById('single-o').value);
-        if (!opciones) { toast(t('err_opciones')); return; }
+      // Modo tarjetas manuales: una o varias
+      var blocks = document.querySelectorAll('#manual-cards-list .manual-card-block');
+      if (!blocks.length) { toast(t('err_no_cards')); return; }
+      for (var bi = 0; bi < blocks.length; bi++) {
+        var b = blocks[bi];
+        var bq = b.querySelector('.m-q').value.trim();
+        var ba = b.querySelector('.m-a').value.trim();
+        if (!bq || !ba) { toast(t('err_qa_required')); return; }
+        var bt = b.querySelector('.m-tipo').value;
+        var bo = null;
+        if (tipoUsaOpciones(bt)) {
+          bo = parseLineasOpciones(b.querySelector('.m-o').value);
+          if (!bo) { toast(t('err_opciones')); return; }
+        }
+        if (bt === 'escala' || bt === 'numero') {
+          if (parseEntero(ba) === null) { toast(t('err_num_required')); return; }
+          if (bt === 'escala' && !respuestaNumValida(ba)) { toast(t('err_escala_range')); return; }
+        }
+        cardsRaw.push({ q: bq, a: ba, e: b.querySelector('.m-e').value.trim(), t: bt, o: bo });
       }
-      cardsRaw = [{ q: q, a: a, e: document.getElementById('single-e').value.trim(), t: tipo, o: opciones }];
     }
 
     var now = Date.now();
@@ -2349,6 +2796,8 @@ var UI = {
       mazoId: mazoId,
       nombre: nombre,
       icono: UI._pickers['deck-icon'] || 'layer-group',
+      // Color del ícono: solo local (presentación), no se sincroniza como el color.
+      iconoColor: UI._pickers['deck-icon-color'] || CONFIG.COLORS[0],
       color: UI._pickers['deck-color'] || CONFIG.COLORS[0],
       orden: Store.decks().filter(function (d) { return !d.borrado; }).length,
       creado: now, updatedAt: now, borrado: false
@@ -2356,8 +2805,15 @@ var UI = {
 
     var tarjetas = cardsRaw.map(function (c) {
       var tipo = TIPOS_CARD.indexOf(c.t) !== -1 ? c.t : 'tarjeta';
-      var opciones = (tipo === 'opcion') ? normalizarOpciones(c.o) : null;
-      if (tipo === 'opcion' && !opciones) tipo = 'tarjeta'; // opciones inválidas → clásica
+      var opciones = null;
+      if (tipoUsaOpciones(tipo)) {
+        opciones = normalizarOpciones(c.o);
+        if (!opciones) tipo = 'tarjeta'; // opciones inválidas → clásica
+      }
+      if (tipo === 'escala' || tipo === 'numero') {
+        // Respuesta esperada inválida → se degrada a clásica
+        if (!c.a || parseEntero(c.a) === null || (tipo === 'escala' && !respuestaNumValida(c.a))) tipo = 'tarjeta';
+      }
       return {
         id: uuid(), mazoId: mazoId, icono: c.i || '', pregunta: c.q || '',
         respuesta: c.a || '', explicacion: c.e || '', tipo: tipo, opciones: opciones,
@@ -2386,12 +2842,7 @@ var UI = {
     document.getElementById('deck-name').value = '';
     document.getElementById('json-input').value = '';
     document.getElementById('json-feedback').textContent = '';
-    document.getElementById('single-q').value = '';
-    document.getElementById('single-a').value = '';
-    document.getElementById('single-e').value = '';
-    document.getElementById('single-o').value = '';
-    document.getElementById('single-tipo').value = 'tarjeta';
-    document.getElementById('single-opciones-wrap').hidden = true;
+    document.getElementById('manual-cards-list').innerHTML = '';
     UI.renderDashboard();
     UI.show('dashboard');
     toast(t('deck_created') + ': ' + nombre);
@@ -2442,6 +2893,9 @@ var UI = {
     });
     // Aplicar idioma y traducciones estáticas
     I18N.apply();
+    renderGreeting();
+    var setNombre = document.getElementById('set-nombre');
+    if (setNombre) setNombre.value = s.nombre || '';
   },
 
   initSettings: function () {
@@ -2459,6 +2913,17 @@ var UI = {
     seg('anim', 'animacion');
     seg('revelar', 'revelar');
     seg('idioma', 'idioma');
+    var setNombre = document.getElementById('set-nombre');
+    if (setNombre) {
+      setNombre.value = Store.settings().nombre || '';
+      setNombre.addEventListener('change', function () {
+        var s = Store.settings();
+        s.nombre = setNombre.value.trim().slice(0, 40);
+        Store.setSettings(s);
+        renderGreeting();
+        toast(t('name_saved'));
+      });
+    }
     document.getElementById('limite-slider').addEventListener('input', function (e) {
       var s = Store.settings();
       s.limiteNuevas = Number(e.target.value);
@@ -2578,6 +3043,7 @@ function startApp() {
   show('dashboard');
   SyncEngine.updateIndicator();
   UI.renderDashboard();
+  maybeAskName();
 
   // Sync: flush → pull → merge (solo si hay red)
   if (navigator.onLine) {
@@ -2634,8 +3100,13 @@ function initPromptCopy() {
     var nombre = document.getElementById('deck-name').value.trim();
     var prompt = t('prompt_intro', { a: nombre || '[TEMA]' }) + '\n\n' +
       t('prompt_rule1') + '\n' +
-      '[{"q":"...","a":"..."}]\n' +
-      '[{"q":"¿...?","a":"...","t":"opcion","o":[{"t":"Opción","c":true},{"t":"Otra"}]}]\n\n' +
+      '[{"q":"¿Qué significa PWA?","a":"Progressive Web App","t":"tarjeta","e":"Aplicación web instalable"}]\n' +
+      '[{"q":"¿Cuál es la capital de España?","a":"Madrid","t":"opcion","o":[{"t":"Madrid","c":true},{"t":"Barcelona","c":false},{"t":"Sevilla","c":false}]}]\n' +
+      '[{"q":"Elige el antónimo de «frío»","a":"Cálido","t":"desplegable","o":[{"t":"Cálido","c":true},{"t":"Frío","c":false},{"t":"Tibio","c":false}]}]\n' +
+      '[{"q":"¿Cuántos lados tiene un hexágono?","a":"6","t":"numero"}]\n' +
+      '[{"q":"Del 1 al 10, ¿cómo de difícil fue este tema?","a":"8","t":"escala"}]\n' +
+      '[{"q":"Escribe una frase con «aunque»","a":"Aunque llueva, saldré a correr","t":"texto"}]\n' +
+      '[{"q":"Explica con tus palabras qué es la fotosíntesis","a":"Las plantas convierten luz en energía","t":"abierta"}]\n\n' +
       t('prompt_rule2') + '\n' +
       t('prompt_rule3');
     copyText(prompt).then(function () { toast(t('prompt_copied')); });
@@ -2645,10 +3116,12 @@ function initPromptCopy() {
 /** Boot de la aplicación. */
 function boot() {
   Store.load();
+  UI.applySettings();
   UI.initCreateDeck();
   UI.initSettings();
-  UI.applySettings();
   bindModal();
+  bindNameModal();
+  initPasswordToggles();
   initSyncListeners();
   initInstall();
   initPromptCopy();

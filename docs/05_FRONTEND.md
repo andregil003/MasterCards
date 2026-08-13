@@ -37,20 +37,37 @@
    `login|registro|backupcodes|totp|recuperar|dashboard|crearMazo|estudio|ajustes|resumen`.
 9. **Dashboard** — render de mazos, búsqueda + filtros, drag (pointer events),
    compartir, FAB.
-10. **CrearMazo** — JSON paste + tarjeta individual + picker de ícono/color.
-    El JSON acepta `t` (tipo) y `o` (opciones); el formulario individual tiene
-    selector de tipo y (para `opcion`) un textarea de opciones con `*`.
+10. **CrearMazo** — pestañas JSON / Tarjetas manuales + picker de ícono/color.
+    - **JSON**: pega el JSON de IA; acepta `t` (tipo) y `o` (opciones). Si un
+      tipo no trae datos válidos (opciones para `opcion`/`desplegable`, número
+      entero para `escala`/`numero`) se degrada a `tarjeta`.
+    - **Tarjetas manuales**: lista de N tarjetas (añadir/borrar, renumeradas
+      automáticamente) con selector de tipo por tarjeta y textarea de opciones
+      con `*` para `opcion`/`desplegable`.
+    - **Picker de ícono/color**: botón `.icon-sel` que abre panel plegable con
+      chips de categoría (`CONFIG.ICON_GROUPS`), grid de iconos y fila de 8
+      colores. El color elegido (`iconoColor`) es local-only.
 11. **Estudio** — flip, editar/borrar, respuesta según tipo de tarjeta
     (`renderAnswers`): 4 botones SRS (clásica), opciones (`opt-btn`, barajadas,
-    una oportunidad), input+Comprobar (`texto`), o «Ver respuesta» + «La sabía»/
-    «No la sabía» (`abierta`, se muestran al voltear vía `onFlip`). Tipos
+    una oportunidad), `<select>`+Comprobar (`desplegable`), botones 1–10
+    (`escala`), input numérico+Comprobar (`numero`, `parseEntero`), input+Comprobar
+    (`texto`), o «Ver respuesta» + «La sabía»/«No la sabía» (`abierta`). Tipos
     tipados gradúan q=4/q=1, revelan siempre la respuesta y dejan 2,2 s de
     feedback. Animaciones, buffer de resumen, revelar al fallar/final.
 12. **Ajustes** — persiste `mc_settings`, export/borrado/logout; para cuentas MC
     bloque de **Seguridad** (cambiar contraseña, TOTP, regenerar códigos).
-13. **Errores globales** — `window.onerror`/`unhandledrejection` muestran el
+    Botón **Instalar app** separado por `hr.settings-sep` de los botones
+    destructivos. Campo **Tu nombre** (para el saludo del dashboard).
+13. **Saludo** — `saludoDeLaHora()` (5–12 mañana, 12–20 tarde, 20–5 noche) +
+    `renderGreeting()` con nombre del usuario si `settings.nombre` existe;
+    `maybeAskName()` abre un modal único la primera vez (Omitir o Guardar),
+    editable después desde Ajustes.
+14. **Login MC** — placeholder de usuario traducible; cada campo de contraseña
+    (login, registro ×2, recuperar ×2, seguridad ×3) lleva un toggle `.pw-toggle`
+    para mostrar/ocultar (`initPasswordToggles`).
+15. **Errores globales** — `window.onerror`/`unhandledrejection` muestran el
     `crash-box` fijo (mensaje + botón recargar); nunca pantallas en blanco.
-14. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
+16. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
 
 ## 5.3 Markdown ligero (`md()`)
 

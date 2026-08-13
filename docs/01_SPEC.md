@@ -148,3 +148,27 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   automáticos gradúan q=4/q=1. Columnas nuevas `Tipo`/`Opciones` en la hoja
   `Tarjetas` con migración automática. JSON de importación acepta `t` y `o`;
   formulario individual y editor con selector de tipo. `scripts/test.js` 61/61.
+- 2026-08-13: **Backend desplegado (Versión 7)** con las columnas
+  `Tipo`/`Opciones` (passthrough; los tipos nuevos son strings libres, no
+  requieren redeploy). El campo `iconoColor` de un mazo es **solo local**
+  (como `favoritas`), nunca se envía al backend.
+- 2026-08-13: **Ronda de UX**:
+  - Auditoría de iconos FA Free auto-hospedados: `plant` y `sword` no existen
+    en el set; se mapean a `seedling` y `shield-halved`.
+  - **Picker de iconos** reescrito: botón que abre panel plegable con chips
+    por categoría (`CONFIG.ICON_GROUPS`) + grid + fila de 8 colores; el color
+    del ícono se elige en el picker y se guarda como `iconoColor` (local).
+  - **Tipos nuevos**: `desplegable` (select, una oportunidad), `escala`
+    (botones 1–10) y `numero` (entero exacto). Helpers `tipoUsaOpciones`,
+    `tipoAuto`, `parseEntero`, `respuestaNumValida`; validación en importación
+    JSON (fallback a `tarjeta`) y en el editor.
+  - **Tarjetas manuales**: la pestaña «Tarjeta individual» pasa a «Tarjetas
+    manuales» con lista de N tarjetas (añadir/borrar, renumeración automática).
+  - **Prompt de IA**: ejemplos de todos los tipos y reglas ampliadas.
+  - **Login**: placeholder del usuario traducible (`usuario`/`username`) y
+    toggle ver/ocultar contraseña en los 8 campos.
+  - **Saludo**: por hora del día (mañana/tarde/noche) con nombre del usuario;
+    modal único la primera vez (con Omitir) + campo «Tu nombre» en Ajustes.
+  - **Ajustes**: `hr.settings-sep` separa los botones destructivos de
+    «Instalar app»/«Cerrar sesión».
+  - `scripts/test.js` 70/70, SW a `mastercards-v7`.

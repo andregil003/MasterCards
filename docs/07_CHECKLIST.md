@@ -105,3 +105,24 @@
 - [ ] Compartir/importar mazo funcionan con una sesión MC.
 - [ ] `adminResetPassword('usuario', 'Nueva#Pass1')` en el editor de Apps Script
       restablece una cuenta olvidada.
+
+## 7.10 Ronda de UX (2026-08-13)
+
+- [ ] Picker de iconos: abre al tocar el botón, chips por categoría filtran,
+      cada icono del grid se muestra (sin cuadrados vacíos: `plant`/`sword` no
+      existen y se ven como `seedling`/`shield-halved`), la fila de colores
+      cambia el color del icono y este se conserva en dashboard y estudio.
+- [ ] Tarjetas manuales: se pueden añadir varias en la pestaña «Tarjetas
+      manuales», se renumeran al borrar, y se crean todas al guardar.
+- [ ] Tipos nuevos: `desplegable` (select + Comprobar, una oportunidad),
+      `escala` (botones 1–10), `numero` (entero exacto, con/decimales o texto
+      → fallo). El JSON de IA con estos tipos se importa y valida; si falta
+      `o` (desplegable) o la respuesta no es entera, se degrada a `tarjeta`.
+- [ ] Login: el placeholder del usuario dice «usuario»/«username»; el ojo
+      muestra/oculta la contraseña en login, registro, recuperar y Seguridad.
+- [ ] Saludo: al entrar aparece «Buenos días/Buenas tardes/Buenas noches»
+      según la hora; la primera vez pregunta el nombre (Omitir/Guardar) y se
+      puede cambiar en Ajustes → Tu nombre. Sin nombre → sin mención.
+- [ ] Ajustes: «Instalar app» y «Cerrar sesión» quedan separados visualmente
+      de Exportar/Borrar datos.
+- [ ] `node scripts/test.js` → `PASS=70 FAIL=0`.

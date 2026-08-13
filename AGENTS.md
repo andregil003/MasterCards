@@ -53,13 +53,19 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   `Content-Type: text/plain;charset=utf-8` (workaround CORS: Apps Script no
   soporta preflight OPTIONS). Idempotencia por UUID + `UpdatedAt` (LWW).
 - SRS: **SM-2** con 4 botones: Otra vez=1, Difícil=3, Bien=4, Fácil=5.
-- Tipos de tarjeta (2026-08-12): `tarjeta` (clásica, 4 botones), `abierta`
+- Tipos de tarjeta: `tarjeta` (clásica, 4 botones), `abierta`
   (manual: «La sabía»/«No la sabía» → q=4/q=1), `opcion` (opción múltiple,
   una oportunidad → q=4/q=1), `texto` (respuesta escrita, comparada con
-  `normalizarTexto` → q=4/q=1). En el JSON de importación: `t` (tipo) y `o`
-  (opciones `[{t,c}]`); en el formulario individual y el editor: selector de
-  tipo + opciones una por línea con `*` marcando la correcta. Columna `Tipo`
+  `normalizarTexto` → q=4/q=1), `desplegable` (select + Comprobar → q=4/q=1),
+  `escala` (botón 1–10 → q=4/q=1), `numero` (entero exacto con `parseEntero`
+  → q=4/q=1). En el JSON de importación: `t` (tipo) y `o` (opciones
+  `[{t,c}]`); los tipos sin datos válidos degradan a `tarjeta`. Columna `Tipo`
   (M) y `Opciones` (N) en la hoja `Tarjetas` (migración automática).
+- Picker de iconos (2026-08-13): panel plegable con chips de categoría
+  (`CONFIG.ICON_GROUPS`), grid de iconos y fila de 8 colores; el color del
+  ícono (`iconoColor`) es estado LOCAL (no se sincroniza). La galería usa el
+  set FA Free: `plant` y `sword` NO existen y están mapeados a `seedling` y
+  `shield-halved`.
 - Iconos: **Font Awesome Free 6 AUTO-HOSPEDADO** en `assets/fontawesome/`.
   **PROHIBIDO usar emojis como iconos en la UI.**
 - Animaciones: híbridas (error = shake sutil + glow rojo; acierto = pop + confeti
@@ -150,13 +156,20 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
       `parseLineasOpciones`). `scripts/test.js` 61/61 OK.
 - [x] Fase 3 (2026-08-12): guía de 3 pasos en dashboard vacío + docs
       actualizados (SCHEMA M/N, SRS 4.1.1, AGENTS.md).
-- [ ] **PENDIENTE (usuario)**: verificación manual (checklist 7.9), borrar de
-      la hoja `Usuarios` los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`,
-      `e2e_6f26eb`) y **re-desplegar el backend (Versión 7)** con las columnas
-      de tipo/opciones. Después del despliegue, correr `scripts/smoke-test.ps1`
-      y `scripts/e2e-auth.js`.
-- [ ] **PENDIENTE (usuario)**: re-probar el login con Google en el móvil
-      instalado (debe funcionar ya con popup + URIs registradas).
+- [x] Fase 4 (2026-08-12/13): **backend desplegado (Versión 7)** con las
+      columnas de tipo/opciones. Falta (usuario): borrar de la hoja `Usuarios`
+      los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`, `e2e_6f26eb`) y
+      correr `scripts/smoke-test.ps1` y `scripts/e2e-auth.js`.
+- [x] Fase 5 (2026-08-13): **ronda de UX**: iconos FA invisibles arreglados
+      (mapeo `plant→seedling`, `sword→shield-halved`) + picker de iconos con
+      categorías y color por icono (`iconoColor`, local-only); nuevos tipos
+      `desplegable`/`escala`/`numero`; pestaña «Tarjetas manuales» con N
+      tarjetas; prompt de IA más específico; login (placeholder «usuario» +
+      toggle ver/ocultar contraseña en los 8 campos); saludo por hora con
+      nombre (modal único + Ajustes); separación visual de los botones de
+      Ajustes. SW a `mastercards-v7`. `scripts/test.js` 70/70 OK.
+- [ ] **PENDIENTE (usuario)**: verificación manual (checklist 7.9) y re-probar
+      el login con Google en el móvil instalado.
 
 ## 6. Cómo verificar tu trabajo
 

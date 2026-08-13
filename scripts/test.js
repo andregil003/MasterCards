@@ -45,7 +45,7 @@ function extractFn(name) {
   return extractBlock('function ' + name + '\\b[^{]*\\{', src);
 }
 
-const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC', 'normalizarTexto', 'normalizarOpciones', 'parseLineasOpciones', 'opcionesParaEditar'];
+const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC', 'normalizarTexto', 'normalizarOpciones', 'parseLineasOpciones', 'opcionesParaEditar', 'parseEntero', 'respuestaNumValida', 'tipoUsaOpciones', 'tipoAuto', 'saludoDeLaHora'];
 const CONFIG_BLOCK = /var CONFIG = \{[\s\S]*?\n\};/.exec(src)[0];
 const I18N_BLOCK = extractBlock('var I18N = \\{', src);
 // Regex de las cuentas MC (declaradas como var en app.js)
@@ -56,7 +56,7 @@ const ctx = { window: { crypto: undefined }, Math, Date, String, console, Object
 vm.createContext(ctx);
 vm.runInContext(CONFIG_BLOCK + '\n' + I18N_BLOCK + '\n' + USERNAME_RE_BLOCK + '\n' + TOTP_RE_BLOCK + '\n' + FUNCS.map(extractFn).join('\n'), ctx);
 
-const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t, validarPasswordMC, normalizarTexto, normalizarOpciones, parseLineasOpciones, opcionesParaEditar, USERNAME_RE, TOTP_RE } = ctx;
+const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t, validarPasswordMC, normalizarTexto, normalizarOpciones, parseLineasOpciones, opcionesParaEditar, parseEntero, respuestaNumValida, tipoUsaOpciones, tipoAuto, saludoDeLaHora, USERNAME_RE, TOTP_RE } = ctx;
 const I18N = ctx.I18N;
 
 let pass = 0, fail = 0;
@@ -114,6 +114,16 @@ ok('parseLineasOpciones: * marca correcta', JSON.stringify(parseLineasOpciones('
 ok('parseLineasOpciones: sin * → null', parseLineasOpciones('Madrid\nBarcelona') === null);
 ok('parseLineasOpciones: vacío → null', parseLineasOpciones('') === null);
 ok('opcionesParaEditar: formato edición', opcionesParaEditar({ opciones: [{ texto: 'A', correcta: true }, { texto: 'B', correcta: false }] }) === '*A\nB');
+ok('parseEntero: entero válido', parseEntero('7') === 7 && parseEntero(7) === 7);
+ok('parseEntero: con espacios', parseEntero('  8 ') === 8);
+ok('parseEntero: decimal → null', parseEntero('2.5') === null);
+ok('parseEntero: no numérico → null', parseEntero('hola') === null);
+ok('parseEntero: vacío → null', parseEntero('') === null && parseEntero(null) === null && parseEntero(undefined) === null);
+ok('respuestaNumValida: rango 1-10', respuestaNumValida('5') === true && respuestaNumValida('11') === false && respuestaNumValida('0') === false);
+ok('tipoUsaOpciones: opcion y desplegable', tipoUsaOpciones('opcion') === true && tipoUsaOpciones('desplegable') === true && tipoUsaOpciones('tarjeta') === false);
+ok('tipoAuto: los tipos calificables', tipoAuto('opcion') && tipoAuto('desplegable') && tipoAuto('escala') && tipoAuto('numero') && tipoAuto('texto') && !tipoAuto('tarjeta') && !tipoAuto('abierta'));
+const hora = saludoDeLaHora();
+ok('saludoDeLaHora: devuelve morning/afternoon/evening', hora === 'morning' || hora === 'afternoon' || hora === 'evening');
 
 console.log('▶ I18N');
 const keysEs = Object.keys(I18N.dicts.es);

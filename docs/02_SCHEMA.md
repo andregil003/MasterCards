@@ -37,8 +37,8 @@ Script Properties bajo la clave `SPREADSHEET_ID`).
 | J | ProximaRevision | number | epoch ms. 0 = tarjeta nueva. |
 | K | UpdatedAt | number | epoch ms. Para LWW. |
 | L | Borrado | boolean | Soft-delete. |
-| M | Tipo | string | `tarjeta` (clásica), `abierta`, `opcion`, `texto`. Default `tarjeta` en tarjetas viejas. |
-| N | Opciones | string (JSON) | Solo tipo `opcion`: array `[{texto, correcta}]`. `''` si no aplica. |
+| M | Tipo | string | `tarjeta` (clásica), `abierta`, `opcion`, `texto`, `desplegable`, `escala`, `numero`. Default `tarjeta` en tarjetas viejas. |
+| N | Opciones | string (JSON) | Solo tipos `opcion` y `desplegable`: array `[{texto, correcta}]`. `''` si no aplica. |
 
 > Migración automática: `migrarTarjetas_` añade las columnas M/N a hojas
 > `Tarjetas` ya existentes (se ejecuta en cada arranque del backend).
@@ -77,13 +77,17 @@ Claves (prefijo `mc_`):
 | `mc_decks` | Array de mazos (`{mazoId,nombre,icono,color,orden,creado,updatedAt,borrado}`). |
 | `mc_cards` | Array de tarjetas (`{id,mazoId,icono,pregunta,respuesta,explicacion,tipo,opciones,intervalo,facilidad,proximaRevision,updatedAt,borrado}`). |
 | `mc_syncQueue` | Array de operaciones pendientes (`{opId,tipo,createdAt,data}`). |
-| `mc_settings` | `{tema:'auto'\|'claro'\|'oscuro', animacion:'sutil'\|'hibrido'\|'vistoso', revelar:'fallar'\|'final', limiteNuevas:number, favoritas:{cardId:true}}` |
+| `mc_settings` | `{tema:'auto'\|'claro'\|'oscuro', animacion:'sutil'\|'hibrido'\|'vistoso', revelar:'fallar'\|'final', limiteNuevas:number, favoritas:{cardId:true}, nombre:string}` |
 | `mc_meta` | `{ultimaSync:number, nuevasHoy:{fecha:'YYYY-MM-DD',count:number}, sincronizando:boolean}` |
 
 **Reglas:**
 - Fechas siempre **epoch ms** (números). Solo el contador diario usa `YYYY-MM-DD`
   (string de fecha local) como clave.
 - `favoritas` es un objeto `{cardId:true}` (estado LOCAL, no se sincroniza).
+- `iconoColor` en un mazo es un hex de color del ícono (estado LOCAL como
+  `favoritas`; no se envía al backend). Al sincronizar se conserva porque el
+  merge local aplica los campos del servidor sobre los locales.
+- `nombre` (Ajustes) es local: se usa para el saludo del dashboard.
 - El borrado en local es soft: se marca `borrado:true` y se elimina de las
   colecciones activas; la fila se conserva hasta que el servidor confirme.
 

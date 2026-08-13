@@ -51,9 +51,12 @@
         <form id="form-login-mc" autocomplete="on">
           <label class="field-label" for="mc-username" data-i18n="username">Usuario</label>
           <input id="mc-username" class="input" type="text" autocomplete="username" maxlength="30"
-                 placeholder="mi_usuario" data-i18n-placeholder="username_ph" required />
+                 placeholder="usuario" data-i18n-placeholder="username_ph" required />
           <label class="field-label" for="mc-password" data-i18n="password">Contraseña</label>
-          <input id="mc-password" class="input" type="password" autocomplete="current-password" required />
+          <div class="pw-field">
+            <input id="mc-password" class="input" type="password" autocomplete="current-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <p id="mc-login-error" class="error hidden"></p>
           <button type="submit" class="btn primary block" data-i18n="login_btn">Iniciar sesión</button>
         </form>
@@ -74,10 +77,16 @@
           <input id="reg-username" class="input" type="text" autocomplete="username" maxlength="30" required />
           <p class="muted small" data-i18n="username_hint">3–30 caracteres: letras, números, . _ -</p>
           <label class="field-label" for="reg-password" data-i18n="password">Contraseña</label>
-          <input id="reg-password" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="reg-password" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <div id="reg-pw-meter" class="pw-meter"></div>
           <label class="field-label" for="reg-password2" data-i18n="repeat_password">Repetir contraseña</label>
-          <input id="reg-password2" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="reg-password2" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <p id="reg-error" class="error hidden"></p>
           <button type="submit" class="btn primary block" data-i18n="register_btn">Registrarme</button>
         </form>
@@ -139,10 +148,16 @@
           <label class="field-label" for="rec-code" data-i18n="recover_code">Código</label>
           <input id="rec-code" class="input" type="text" autocomplete="one-time-code" placeholder="XXXXX-XXXXX" data-i18n-placeholder="recover_code_ph" />
           <label class="field-label" for="rec-password" data-i18n="new_password">Contraseña nueva</label>
-          <input id="rec-password" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="rec-password" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <div id="rec-pw-meter" class="pw-meter"></div>
           <label class="field-label" for="rec-password2" data-i18n="repeat_password">Repetir contraseña</label>
-          <input id="rec-password2" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="rec-password2" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <p id="rec-error" class="error hidden"></p>
           <button type="submit" class="btn primary block" data-i18n="recover_btn">Recuperar</button>
         </form>
@@ -155,6 +170,7 @@
     <!-- ===== DASHBOARD ===== -->
     <section class="screen" data-screen="dashboard">
       <div class="toolbar">
+        <p id="greeting" class="greeting"></p>
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
           <input id="search-input" type="search" placeholder="Buscar mazos…" autocomplete="off"
@@ -237,25 +253,13 @@
         <p id="json-feedback" class="muted small"></p>
       </div>
 
-      <!-- Modo individual -->
+      <!-- Modo tarjetas manuales (una o varias) -->
       <div id="panel-single" hidden>
-        <label class="field-label" data-i18n="card_type">Tipo de tarjeta</label>
-        <select id="single-tipo" class="input">
-          <option value="tarjeta" data-i18n="tipo_tarjeta">Tarjeta clásica</option>
-          <option value="abierta" data-i18n="tipo_abierta">Pregunta abierta</option>
-          <option value="opcion" data-i18n="tipo_opcion">Opción múltiple</option>
-          <option value="texto" data-i18n="tipo_texto">Texto libre</option>
-        </select>
-        <label class="field-label" data-i18n="question_label">Pregunta</label>
-        <textarea id="single-q" class="input textarea" rows="2"></textarea>
-        <div id="single-opciones-wrap" hidden>
-          <label class="field-label" data-i18n="opciones_label">Opciones (una por línea; marca la correcta con *)</label>
-          <textarea id="single-o" class="input textarea" rows="4" placeholder="*Madrid&#10;Barcelona&#10;Sevilla"></textarea>
-        </div>
-        <label class="field-label" data-i18n="answer_label">Respuesta</label>
-        <textarea id="single-a" class="input textarea" rows="2"></textarea>
-        <label class="field-label"><span data-i18n="explanation_label">Explicación (¿por qué?)</span> <span class="muted" data-i18n="optional">opcional</span></label>
-        <textarea id="single-e" class="input textarea" rows="2"></textarea>
+        <p class="muted small" data-i18n="manual_cards_hint">Añade una o varias tarjetas. Cada bloque tiene su propio tipo.</p>
+        <div id="manual-cards-list"></div>
+        <button id="btn-add-card" type="button" class="btn ghost block">
+          <i class="fa-solid fa-plus"></i> <span data-i18n="add_card">Añadir tarjeta</span>
+        </button>
       </div>
 
       <button id="btn-create-deck" class="btn primary block">
@@ -311,6 +315,9 @@
             <option value="tarjeta" data-i18n="tipo_tarjeta">Tarjeta clásica</option>
             <option value="abierta" data-i18n="tipo_abierta">Pregunta abierta</option>
             <option value="opcion" data-i18n="tipo_opcion">Opción múltiple</option>
+            <option value="desplegable" data-i18n="tipo_desplegable">Lista desplegable</option>
+            <option value="escala" data-i18n="tipo_escala">Escala 1–10</option>
+            <option value="numero" data-i18n="tipo_numero">Número exacto</option>
             <option value="texto" data-i18n="tipo_texto">Texto libre</option>
           </select>
           <div id="edit-opciones-wrap" hidden>
@@ -358,6 +365,11 @@
     <section class="screen" data-screen="ajustes" hidden>
       <h2 data-i18n="settings">Ajustes</h2>
 
+      <label class="field-label" for="set-nombre" data-i18n="your_name">Tu nombre</label>
+      <input id="set-nombre" class="input" type="text" maxlength="40" placeholder="Ana" autocomplete="nickname"
+             data-i18n-placeholder="your_name_ph" />
+      <p class="muted small" data-i18n="your_name_hint">Lo usamos para saludarte en el inicio.</p>
+
       <label class="field-label" data-i18n="language">Idioma</label>
       <div class="segmented" id="seg-idioma">
         <button data-value="auto" data-i18n="language_auto">Auto</button>
@@ -401,12 +413,21 @@
         <p class="muted small" id="account-info"></p>
         <form id="form-change-password">
           <label class="field-label" for="cp-current" data-i18n="current_password">Contraseña actual</label>
-          <input id="cp-current" class="input" type="password" autocomplete="current-password" required />
+          <div class="pw-field">
+            <input id="cp-current" class="input" type="password" autocomplete="current-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <label class="field-label" for="cp-new" data-i18n="new_password">Contraseña nueva</label>
-          <input id="cp-new" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="cp-new" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <div id="cp-pw-meter" class="pw-meter"></div>
           <label class="field-label" for="cp-new2" data-i18n="repeat_password">Repetir contraseña</label>
-          <input id="cp-new2" class="input" type="password" autocomplete="new-password" required />
+          <div class="pw-field">
+            <input id="cp-new2" class="input" type="password" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
+          </div>
           <p id="cp-error" class="error hidden"></p>
           <button type="submit" class="btn ghost block" data-i18n="change_password_btn">Cambiar contraseña</button>
         </form>
@@ -415,6 +436,8 @@
           <button id="btn-regen-codes" class="btn ghost"><i class="fa-solid fa-arrow-rotate-right"></i> <span data-i18n="regen_codes">Regenerar códigos</span></button>
         </div>
       </div>
+
+      <hr class="settings-sep" />
 
       <button id="btn-install" class="btn ghost block"><i class="fa-solid fa-circle-down"></i> <span data-i18n="install_btn">Instalar app</span></button>
       <button id="btn-logout" class="btn danger-ghost block"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">Cerrar sesión</span></button>
@@ -444,6 +467,19 @@
       <div class="row-gap">
         <button id="modal-cancel" class="btn ghost" data-i18n="cancel">Cancelar</button>
         <button id="modal-ok" class="btn primary" data-i18n="accept">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal único: nombre de pila para el saludo -->
+  <div id="name-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3 data-i18n="name_modal_title">¿Cómo te llamas?</h3>
+      <p class="muted" data-i18n="name_modal_text">Lo usaremos para saludarte en el inicio. Puedes cambiarlo en Ajustes.</p>
+      <input id="name-modal-input" class="input" type="text" maxlength="40" autocomplete="nickname" />
+      <div class="row-gap">
+        <button id="name-modal-skip" class="btn ghost" data-i18n="name_modal_skip">Omitir</button>
+        <button id="name-modal-ok" class="btn primary" data-i18n="save">Guardar</button>
       </div>
     </div>
   </div>
