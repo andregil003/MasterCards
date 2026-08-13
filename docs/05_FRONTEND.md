@@ -70,7 +70,11 @@ líneas iniciadas con `- ` (lista). Devuelve HTML seguro (nunca innerHTML sin es
   `mc_settings.tema` (auto/claro/oscuro) añadiendo la clase `tema-claro` /
   `tema-oscuro` a `<html>` y usando variables CSS (`--bg`, `--surface`, `--text`,
   `--muted`, `--accent`, etc.).
-- Mobile-first, `max-width: 520px` centrado en escritorio, `100dvh` para móvil.
+- Mobile-first (`max-width: 520px`, `100dvh` para móvil, barra inferior fija);
+  en escritorio (`@media min-width: 900px`) el layout se amplía: `main` a
+  `1080px`, mazos en grid (`repeat(auto-fill, minmax(280px, 1fr))`), sin barra
+  inferior (navegación por el header), FAB junto al contenedor, sheet de crear
+  mazo y estudio centrados (~640px), ajustes en columna de 640px.
 - Flip 3D: `.card-inner { transform-style: preserve-3d }`,
   `.card.flip .card-inner { transform: rotateY(180deg) }`,
   `.card-face { backface-visibility: hidden }`.

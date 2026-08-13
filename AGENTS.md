@@ -65,6 +65,12 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   búsqueda + filtros combinables (Vencidas/Nuevas/Favoritas).
 - Service Worker: actualización automática SOLO si la syncQueue está vacía.
 - Hosting: GitHub Pages. UI en español. Dark mode nativo + override manual.
+- Layout responsive (2026-08-12): mobile-first `max-width: 520px` con barra
+  inferior; en escritorio (`@media min-width: 900px`) `main` se amplía a
+  `1080px`, los mazos van en grid de varias columnas, la barra inferior se
+  oculta (navegación por el header) y el estudio/sheet/ajustes se centran. El
+  logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con raya verde),
+  usado en login y en la cabecera de la app.
 
 ## 4. Restricciones técnicas obligatorias
 
@@ -110,8 +116,17 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 - [x] Backend desplegado con la feature de cuentas MC (Versión 6). Smoke test
       8/8 OK + `scripts/e2e-auth.js` 16/16 OK (register → login → TOTP →
       changePassword → backup codes → recover).
+- [x] UI: logo oficial (`assets/icons/icon-192.png`) en login y cabecera,
+      espaciados unificados y layout responsive de escritorio
+      (`@media min-width: 900px`: mazos en grid, sin barra inferior, estudio/
+      sheet/ajustes centrados). `scripts/test.js` sigue 47/47 OK.
 - [ ] **PENDIENTE**: verificación manual (checklist 7.9) y borrar de la hoja
       `Usuarios` los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`, `e2e_6f26eb`)
+- [ ] **PENDIENTE (usuario)**: añadir en Google Cloud Console las URIs de
+      redirección exactas del Client ID (Google login da `Error 400:
+      redirect_uri_mismatch`): `https://andregil003.github.io/MasterCards`,
+      `https://andregil003.github.io/MasterCards/`, `https://andregil003.github.io/`
+      y para local `http://localhost:5000/` + `http://localhost:5000/MasterCards`.
 
 ## 6. Cómo verificar tu trabajo
 

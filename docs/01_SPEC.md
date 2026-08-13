@@ -123,3 +123,11 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   cuentas MC contra el backend desplegado (register → login → TOTP →
   changePassword → backup codes → recover). Crea un usuario real de prueba
   `e2e_<rand>` en la hoja Usuarios (borrarlo tras la validación).
+- 2026-08-12: Layout responsive de escritorio: mobile-first 520px se mantiene;
+  `@media (min-width: 900px)` amplía `main` a 1080px, mazos en grid
+  (auto-fill 280px), oculta la barra inferior (navegación por el header),
+  FAB junto al contenedor y estudio/sheet/ajustes centrados. Logo oficial =
+  `assets/icons/icon-192.png` (tarjeta blanca con raya verde) en login y
+  cabecera.
+- 2026-08-12: Unificación de espaciados (reglas `.btn.block + .btn.block`,
+  márgenes de `.field-label`/`.error`, `hr` de Seguridad, `.login-links`).

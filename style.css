@@ -1,7 +1,7 @@
 /* ============================================================
    MasterCards — style.css
    Dark mode nativo (prefers-color-scheme) + override manual.
-   Mobile-first, max-width 520px en escritorio.
+   Mobile-first (max-width 520px) con layout amplio en escritorio (>= 900px).
    ============================================================ */
 
 /* ---------- Tokens de tema ---------- */
@@ -80,7 +80,7 @@ body.nav-shown main { padding-bottom: calc(var(--nav-h) + 104px + env(safe-area-
 
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
-.error { color: var(--danger); }
+.error { color: var(--danger); margin: 10px 0; }
 .hidden { display: none !important; }
 
 /* ---------- Cabecera ---------- */
@@ -106,6 +106,25 @@ body.nav-shown main { padding-bottom: calc(var(--nav-h) + 104px + env(safe-area-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.header-title-wrap #header-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-logo {
+  width: 24px; height: 24px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
 }
 .header-actions { display: flex; align-items: center; gap: 6px; }
 
@@ -177,15 +196,11 @@ body.nav-shown main { padding-bottom: calc(var(--nav-h) + 104px + env(safe-area-
   min-height: 72dvh;
   padding-top: 40px;
 }
-.logo {
+.logo-img {
   width: 96px; height: 96px;
-  border-radius: 26px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 2.4rem;
-  color: #052e16;
-  background: linear-gradient(135deg, #22c55e, #0ea5e9 60%, #8b5cf6);
+  border-radius: 24px;
+  object-fit: cover;
+  background: #fff;
   box-shadow: 0 14px 40px rgba(34, 197, 94, 0.35);
 }
 .login-wrap h2 { font-size: 1.6rem; margin-top: 4px; }
@@ -699,13 +714,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
 .login-wrap form { width: 100%; max-width: 380px; text-align: left; }
 .login-wrap form > .btn.block { margin-top: 20px; }
 .login-wrap > .btn.block { margin-top: 16px; }
+.login-wrap > .input.mono { margin-top: 8px; }
+.login-wrap .check { margin-top: 16px; }
 .login-divider {
   display: flex; align-items: center; gap: 12px;
   margin: 18px 0 4px; width: 100%; max-width: 380px;
   color: var(--muted); font-size: 0.8rem;
 }
 .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.login-links { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+.login-links { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .link-btn { background: none; border: none; color: var(--accent); font-size: 0.9rem; padding: 6px; cursor: pointer; }
 .link-btn:hover { text-decoration: underline; }
 .muted.small { font-size: 0.75rem; }
@@ -742,3 +759,50 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
 /* Separación de botones apilados en formularios y pantallas de cuenta */
 #security-section form > .btn.block { margin-top: 20px; }
 #ajustes > .btn.block { margin-top: 14px; }
+.screen.sheet > .btn.block { margin-top: 20px; }
+.btn.block + .btn.block { margin-top: 14px; }
+#security-section hr { border: none; border-top: 1px solid var(--border); margin: 22px 0 16px; }
+
+/* ---------- Escritorio (>= 900px): layout amplio, sin parecer teléfono ---------- */
+@media (min-width: 900px) {
+  main {
+    max-width: 1080px;
+    padding: 84px 24px 48px;
+  }
+  body.nav-shown main { padding-bottom: 48px; }
+  .app-header { max-width: 1080px; }
+  .bottom-nav { display: none !important; }
+
+  .fab {
+    right: max(32px, calc((100% - 1080px) / 2 + 32px));
+    bottom: 32px;
+  }
+
+  .deck-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .screen.sheet {
+    inset: 10vh 0 auto 0;
+    max-width: 560px;
+    margin: 0 auto;
+    max-height: 80dvh;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    animation: slideDown 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  @keyframes slideDown {
+    from { transform: translateY(-16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .login-wrap { min-height: 80vh; }
+
+  .study-top { max-width: 640px; margin: 0 auto 14px; }
+  .flashcard { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .srs-row { max-width: 640px; margin-left: auto; margin-right: auto; }
+
+  #ajustes { max-width: 640px; margin: 0 auto; }
+}
