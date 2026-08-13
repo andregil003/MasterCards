@@ -21,8 +21,9 @@
    `todayStart()`, `fmtFecha()`, `saveJSON()`.
 3. **Store** — getters/setters de localStorage con carga perezosa y cache en
    memoria; tolerancia a cuotas (`try/catch` + toast).
-4. **Auth** — sesión dual: **GIS** (redirect flow, callback, refresh) o cuenta
-   **MC** (`mode:'google'|'mc'`, `hasSession()`, `owner()` → email o username,
+4. **Auth** — sesión dual: **GIS** (`ux_mode` condicional: popup en
+   Android/desktop, redirect en iOS; callback, refresh) o cuenta **MC**
+   (`mode:'google'|'mc'`, `hasSession()`, `owner()` → email o username,
    `startMcSession()`, `postAuth(action, body)` con errores `{code}`).
 5. **Cuentas MC (4.5)** — pantallas de login/registro/códigos/recuperar/TOTP:
    `validarPasswordMC()` (política), medidor de fortaleza, backup codes (copiar/
@@ -37,11 +38,19 @@
 9. **Dashboard** — render de mazos, búsqueda + filtros, drag (pointer events),
    compartir, FAB.
 10. **CrearMazo** — JSON paste + tarjeta individual + picker de ícono/color.
-11. **Estudio** — flip, editar/borrar, botones SRS, animaciones, buffer de
-    resumen, revelar al fallar/final.
+    El JSON acepta `t` (tipo) y `o` (opciones); el formulario individual tiene
+    selector de tipo y (para `opcion`) un textarea de opciones con `*`.
+11. **Estudio** — flip, editar/borrar, respuesta según tipo de tarjeta
+    (`renderAnswers`): 4 botones SRS (clásica), opciones (`opt-btn`, barajadas,
+    una oportunidad), input+Comprobar (`texto`), o «Ver respuesta» + «La sabía»/
+    «No la sabía» (`abierta`, se muestran al voltear vía `onFlip`). Tipos
+    tipados gradúan q=4/q=1, revelan siempre la respuesta y dejan 2,2 s de
+    feedback. Animaciones, buffer de resumen, revelar al fallar/final.
 12. **Ajustes** — persiste `mc_settings`, export/borrado/logout; para cuentas MC
     bloque de **Seguridad** (cambiar contraseña, TOTP, regenerar códigos).
-13. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
+13. **Errores globales** — `window.onerror`/`unhandledrejection` muestran el
+    `crash-box` fijo (mensaje + botón recargar); nunca pantallas en blanco.
+14. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
 
 ## 5.3 Markdown ligero (`md()`)
 

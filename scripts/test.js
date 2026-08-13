@@ -45,7 +45,7 @@ function extractFn(name) {
   return extractBlock('function ' + name + '\\b[^{]*\\{', src);
 }
 
-const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC'];
+const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC', 'normalizarTexto', 'normalizarOpciones', 'parseLineasOpciones', 'opcionesParaEditar'];
 const CONFIG_BLOCK = /var CONFIG = \{[\s\S]*?\n\};/.exec(src)[0];
 const I18N_BLOCK = extractBlock('var I18N = \\{', src);
 // Regex de las cuentas MC (declaradas como var en app.js)
@@ -56,7 +56,7 @@ const ctx = { window: { crypto: undefined }, Math, Date, String, console, Object
 vm.createContext(ctx);
 vm.runInContext(CONFIG_BLOCK + '\n' + I18N_BLOCK + '\n' + USERNAME_RE_BLOCK + '\n' + TOTP_RE_BLOCK + '\n' + FUNCS.map(extractFn).join('\n'), ctx);
 
-const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t, validarPasswordMC, USERNAME_RE, TOTP_RE } = ctx;
+const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t, validarPasswordMC, normalizarTexto, normalizarOpciones, parseLineasOpciones, opcionesParaEditar, USERNAME_RE, TOTP_RE } = ctx;
 const I18N = ctx.I18N;
 
 let pass = 0, fail = 0;
@@ -98,6 +98,22 @@ ok('estaVencida (futuro)', estaVencida({ proximaRevision: now + 100000 }) === fa
 ok('esNueva', esNueva({ proximaRevision: 0 }) === true);
 ok('fmtShort', fmtShort(new Date(2026, 7, 12).getTime()) === '12/8');
 ok('esc', esc('<b>') === '&lt;b&gt;' && esc('"') === '&quot;');
+
+console.log('▶ Tipos de tarjeta');
+ok('normalizarTexto: tildes', normalizarTexto('Ámbar') === 'ambar');
+ok('normalizarTexto: mayúsculas', normalizarTexto('MADRID') === 'madrid');
+ok('normalizarTexto: puntuación', normalizarTexto('Hola, ¿qué tal?') === 'hola que tal');
+ok('normalizarTexto: espacios', normalizarTexto('  dos   espacios  ') === 'dos espacios');
+ok('normalizarTexto: vacío', normalizarTexto('') === '');
+ok('normalizarOpciones: válido', JSON.stringify(normalizarOpciones([{ texto: 'A', correcta: true }, { texto: 'B', correcta: false }])) === '[{"texto":"A","correcta":true},{"texto":"B","correcta":false}]');
+ok('normalizarOpciones: formato t/c', JSON.stringify(normalizarOpciones([{ t: 'A', c: true }, 'B'])) === '[{"texto":"A","correcta":true},{"texto":"B","correcta":false}]');
+ok('normalizarOpciones: sin correcta → null', normalizarOpciones([{ texto: 'A' }, { texto: 'B' }]) === null);
+ok('normalizarOpciones: 1 opción → null', normalizarOpciones([{ texto: 'A', correcta: true }]) === null);
+ok('normalizarOpciones: no-array → null', normalizarOpciones('x') === null);
+ok('parseLineasOpciones: * marca correcta', JSON.stringify(parseLineasOpciones('*Madrid\nBarcelona')) === '[{"texto":"Madrid","correcta":true},{"texto":"Barcelona","correcta":false}]');
+ok('parseLineasOpciones: sin * → null', parseLineasOpciones('Madrid\nBarcelona') === null);
+ok('parseLineasOpciones: vacío → null', parseLineasOpciones('') === null);
+ok('opcionesParaEditar: formato edición', opcionesParaEditar({ opciones: [{ texto: 'A', correcta: true }, { texto: 'B', correcta: false }] }) === '*A\nB');
 
 console.log('▶ I18N');
 const keysEs = Object.keys(I18N.dicts.es);

@@ -83,7 +83,9 @@ var TARJETAS = {
   FACILIDAD: 9,      // Factor de facilidad EF (SM-2)
   PROX_REVISION: 10, // ProximaRevision (epoch ms; 0 = tarjeta nueva)
   UPDATED_AT: 11,    // UpdatedAt (epoch ms) — LWW
-  BORRADO: 12        // Borrado lógico
+  BORRADO: 12,       // Borrado lógico
+  TIPO: 13,          // Tipo de tarjeta: 'tarjeta'|'abierta'|'opcion'|'texto'
+  OPCIONES: 14       // Opciones JSON (solo tipo 'opcion'): [{texto, correcta}]
 };
 
 // Columnas de la hoja "Usuarios" (1-indexed)
@@ -106,7 +108,7 @@ var HEADERS = {
           'Creado', 'UpdatedAt', 'Borrado'],
   TARJETAS: ['ID', 'Mazo_ID', 'Usuario_Email', 'Icono', 'Pregunta', 'Respuesta',
              'Explicacion', 'Intervalo', 'Facilidad', 'ProximaRevision',
-             'UpdatedAt', 'Borrado'],
+             'UpdatedAt', 'Borrado', 'Tipo', 'Opciones'],
   USUARIOS: ['Usuario', 'Salt', 'Hash', 'Iteraciones', 'ApiTokenHash',
              'BackupCodes', 'TotpActivo', 'Intentos', 'BloqueoHasta', 'Creado']
 };
@@ -533,18 +535,21 @@ function createCards_(email, d) {
     var now = Date.now();
     if (row > 0) {
       // Upsert: sobreescribir texto (LWW simple por UpdatedAt)
-      var r = sheet.getRange(row, 1, 1, 12);
+      var r = sheet.getRange(row, 1, 1, 14);
       if (t.icono != null) setCell_(r, TARJETAS.ICONO, t.icono);
       if (t.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, t.pregunta);
       if (t.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, t.respuesta);
       if (t.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, t.explicacion);
+      if (t.tipo != null) setCell_(r, TARJETAS.TIPO, t.tipo);
+      if (t.opciones != null) setCell_(r, TARJETAS.OPCIONES, JSON.stringify(t.opciones));
       setCell_(r, TARJETAS.UPDATED_AT, now);
       setCell_(r, TARJETAS.BORRADO, false);
     } else {
       sheet.appendRow([
         t.id, d.mazoId, email, t.icono || '', t.pregunta || '', t.respuesta || '',
         t.explicacion || '', t.intervalo || 0, t.facilidad || 2.5,
-        t.proximaRevision || 0, now, false
+        t.proximaRevision || 0, now, false,
+        t.tipo || 'tarjeta', t.opciones ? JSON.stringify(t.opciones) : ''
       ]);
       creadas++;
     }
@@ -566,7 +571,7 @@ function updateSRS_(email, d) {
   var serverTs = Number(fila[TARJETAS.UPDATED_AT - 1]) || 0;
   var clientTs = Number(d.updatedAt) || 0;
   if (clientTs < serverTs) return { id: d.id, skipped: 'lww' }; // versión más vieja
-  var r = sheet.getRange(row, 1, 1, 12);
+  var r = sheet.getRange(row, 1, 1, 14);
   setCell_(r, TARJETAS.INTERVALO, d.intervalo != null ? d.intervalo : 0);
   setCell_(r, TARJETAS.FACILIDAD, d.facilidad != null ? d.facilidad : 2.5);
   setCell_(r, TARJETAS.PROX_REVISION, d.proximaRevision != null ? d.proximaRevision : 0);
@@ -584,11 +589,13 @@ function editCard_(email, d) {
   var serverTs = Number(fila[TARJETAS.UPDATED_AT - 1]) || 0;
   var clientTs = Number(d.updatedAt) || 0;
   if (clientTs < serverTs) return { id: d.id, skipped: 'lww' };
-  var r = sheet.getRange(row, 1, 1, 12);
+  var r = sheet.getRange(row, 1, 1, 14);
   if (d.icono != null) setCell_(r, TARJETAS.ICONO, d.icono);
   if (d.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, d.pregunta);
   if (d.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, d.respuesta);
   if (d.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, d.explicacion);
+  if (d.tipo != null) setCell_(r, TARJETAS.TIPO, d.tipo);
+  if (d.opciones != null) setCell_(r, TARJETAS.OPCIONES, JSON.stringify(d.opciones));
   setCell_(r, TARJETAS.UPDATED_AT, Math.max(clientTs, serverTs));
   return { id: d.id };
 }
@@ -655,6 +662,8 @@ function readTarjetas_(mazoIds, email) {
       pregunta: String(r[TARJETAS.PREGUNTA - 1] || ''),
       respuesta: String(r[TARJETAS.RESPUESTA - 1] || ''),
       explicacion: String(r[TARJETAS.EXPLICACION - 1] || ''),
+      tipo: String(r[TARJETAS.TIPO - 1] || '') || 'tarjeta',
+      opciones: parseOpciones_(r[TARJETAS.OPCIONES - 1]),
       intervalo: Number(r[TARJETAS.INTERVALO - 1]) || 0,
       facilidad: Number(r[TARJETAS.FACILIDAD - 1]) || 2.5,
       proximaRevision: Number(r[TARJETAS.PROX_REVISION - 1]) || 0,
@@ -663,6 +672,17 @@ function readTarjetas_(mazoIds, email) {
     });
   }
   return out;
+}
+
+function parseOpciones_(v) {
+  if (!v) return null;
+  if (typeof v === 'string') {
+    try { v = JSON.parse(v); } catch (e) { return null; }
+  }
+  if (!Array.isArray(v)) return null;
+  return v.map(function (o) {
+    return { texto: String(o.texto || ''), correcta: !!o.correcta };
+  });
 }
 
 function rowToDeck_(r) {
@@ -992,6 +1012,24 @@ function ensureDataStore_() {
   ensureSheet_(ss, 'Mazos', HEADERS.MAZOS);
   ensureSheet_(ss, 'Tarjetas', HEADERS.TARJETAS);
   ensureSheet_(ss, 'Usuarios', HEADERS.USUARIOS);
+  migrarTarjetas_(ss);
+}
+
+/** Añade las columnas nuevas de Tarjetas (Tipo/Opciones) si la hoja ya existía. */
+function migrarTarjetas_(ss) {
+  var sheet = ss.getSheetByName('Tarjetas');
+  if (!sheet || sheet.getLastRow() === 0) return;
+  var header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var falta = [];
+  for (var i = header.length; i < HEADERS.TARJETAS.length; i++) {
+    falta.push(HEADERS.TARJETAS[i]);
+  }
+  if (falta.length) {
+    var start = header.length + 1;
+    for (var j = 0; j < falta.length; j++) {
+      sheet.getRange(1, start + j).setValue(falta[j]);
+    }
+  }
 }
 
 function ensureSheet_(ss, name, headers) {

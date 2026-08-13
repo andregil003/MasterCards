@@ -30,9 +30,13 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 
 - Nombre de la app: **MasterCards**.
 - Backend: **Google Apps Script Web App** (deploy "Execute as: Me" + "Anyone").
-- Autenticación: **GIS (Google Identity Services)** con flujo `redirect`
-  (los popups fallan en iOS). El frontend envía el ID token; el backend lo
-  verifica contra `https://oauth2.googleapis.com/tokeninfo` y comprueba `aud`.
+- Autenticación: **GIS (Google Identity Services)** con flujo condicional:
+  `ux_mode:'redirect'` en iOS (los popups fallan en iOS Safari) y `ux_mode:'popup'`
+  en el resto (Android instalado/desktop evita el `redirect_uri_mismatch` de las
+  PWAs). El frontend envía el ID token; el backend lo verifica contra
+  `https://oauth2.googleapis.com/tokeninfo` y comprueba `aud`.
+  Las URIs de redirección están registradas en Cloud Console
+  (`https://andregil003.github.io/MasterCards` con y sin barra + raíz).
 - Segundo método de login (2026-08-12): **cuenta MasterCards** (usuario +
   contraseña). Hash **PBKDF2-HMAC-SHA256** con 10.000 iteraciones y salt por
   fila; política estricta (8–128, mayúscula, minúscula, dígito, símbolo);
@@ -49,6 +53,13 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   `Content-Type: text/plain;charset=utf-8` (workaround CORS: Apps Script no
   soporta preflight OPTIONS). Idempotencia por UUID + `UpdatedAt` (LWW).
 - SRS: **SM-2** con 4 botones: Otra vez=1, Difícil=3, Bien=4, Fácil=5.
+- Tipos de tarjeta (2026-08-12): `tarjeta` (clásica, 4 botones), `abierta`
+  (manual: «La sabía»/«No la sabía» → q=4/q=1), `opcion` (opción múltiple,
+  una oportunidad → q=4/q=1), `texto` (respuesta escrita, comparada con
+  `normalizarTexto` → q=4/q=1). En el JSON de importación: `t` (tipo) y `o`
+  (opciones `[{t,c}]`); en el formulario individual y el editor: selector de
+  tipo + opciones una por línea con `*` marcando la correcta. Columna `Tipo`
+  (M) y `Opciones` (N) en la hoja `Tarjetas` (migración automática).
 - Iconos: **Font Awesome Free 6 AUTO-HOSPEDADO** en `assets/fontawesome/`.
   **PROHIBIDO usar emojis como iconos en la UI.**
 - Animaciones: híbridas (error = shake sutil + glow rojo; acierto = pop + confeti
@@ -69,9 +80,9 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   inferior; en escritorio (`@media min-width: 900px`) `main` se amplía a
   `1080px`, los mazos van en grid de varias columnas, la barra inferior se
   oculta (navegación por el header) y el estudio/sheet/ajustes se centran. El
-  logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con raya verde),
-  usado en la cabecera de la app (se retiró de las pantallas de login por
-  criterio visual del dueño).
+  logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con raya verde,
+  PNG transparente) y se muestra en la cabecera de la app y en las 5 pantallas
+  de cuenta (`logo-img`).
 
 ## 4. Restricciones técnicas obligatorias
 
@@ -121,13 +132,29 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
       espaciados unificados y layout responsive de escritorio
       (`@media min-width: 900px`: mazos en grid, sin barra inferior, estudio/
       sheet/ajustes centrados). `scripts/test.js` sigue 47/47 OK.
-- [ ] **PENDIENTE**: verificación manual (checklist 7.9) y borrar de la hoja
-      `Usuarios` los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`, `e2e_6f26eb`)
-- [ ] **PENDIENTE (usuario)**: añadir en Google Cloud Console las URIs de
-      redirección exactas del Client ID (Google login da `Error 400:
-      redirect_uri_mismatch`): `https://andregil003.github.io/MasterCards`,
-      `https://andregil003.github.io/MasterCards/`, `https://andregil003.github.io/`
-      y para local `http://localhost:5000/` + `http://localhost:5000/MasterCards`.
+- [x] Fase 0 (2026-08-12): manejadores globales de error (`window.onerror` +
+      `unhandledrejection`) con `crash-box` visible + botón recargar; GIS
+      `ux_mode:'popup'` en Android/desktop (redirect solo iOS) para arreglar el
+      Google login en PWA instalada (405/redirect_uri_mismatch).
+- [x] Fase 1 (2026-08-12): logo oficial regenerado como **PNG transparente**
+      (tarjeta blanca redondeada + raya verde diagonal) en `assets/icons/`
+      (`icon-512`, `icon-192`, `favicon` 64); vuelto a integrar en las 5
+      pantallas de cuenta (`logo-img`) y cabecera; SW a `mastercards-v5`.
+- [x] Fase 2 (2026-08-12): **tipos de tarjeta** (`tarjeta`, `abierta`,
+      `opcion`, `texto`) en backend (columnas M/N + migración automática,
+      `createCards_`/`editCard_`/`readTarjetas_`/`updateSRS_`) y frontend
+      (respuesta por tipo, autoría JSON `t`/`o`, formulario individual y
+      editor con selector de tipo, `normalizarTexto`/`normalizarOpciones`/
+      `parseLineasOpciones`). `scripts/test.js` 61/61 OK.
+- [x] Fase 3 (2026-08-12): guía de 3 pasos en dashboard vacío + docs
+      actualizados (SCHEMA M/N, SRS 4.1.1, AGENTS.md).
+- [ ] **PENDIENTE (usuario)**: verificación manual (checklist 7.9), borrar de
+      la hoja `Usuarios` los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`,
+      `e2e_6f26eb`) y **re-desplegar el backend (Versión 7)** con las columnas
+      de tipo/opciones. Después del despliegue, correr `scripts/smoke-test.ps1`
+      y `scripts/e2e-auth.js`.
+- [ ] **PENDIENTE (usuario)**: re-probar el login con Google en el móvil
+      instalado (debe funcionar ya con popup + URIs registradas).
 
 ## 6. Cómo verificar tu trabajo
 

@@ -11,6 +11,25 @@
 | Bien | 4 | Acierto normal. |
 | Fácil | 5 | Acierto fácil. |
 
+### 4.1.1 Tarjetas tipadas (desde 2026-08-12)
+
+Las tarjetas `abierta`, `opcion` y `texto` NO muestran los 4 botones; se
+gradúan a binario y se traducen a `q`:
+
+| Tipo | Cómo se responde | Correcto | Fallo |
+|------|------------------|----------|-------|
+| `abierta` | Se revela la respuesta y se pulsa «La sabía» / «No la sabía» | q=4 | q=1 |
+| `opcion` | Se pulsa una opción (una única oportunidad) | q=4 | q=1 |
+| `texto` | Se escribe la respuesta y se pulsa «Comprobar» (comparación normalizada) | q=4 | q=1 |
+
+**Normalización de texto** (`normalizarTexto`): minúsculas, sin acentos
+(NFD + quitar combining marks), sin puntuación y con espacios colapsados.
+Ej.: `"¡Ámbar!"` → `ambar`. Usada para `texto` (respuesta) y para aceptar
+variantes en `opcion`.
+
+Las tarjetas tipadas SIEMPRE revelan la respuesta al acabar (aunque `revelar`
+esté en `final`) y dejan ~2,2 s para leer el feedback antes de avanzar.
+
 ## 4.2 Fórmulas SM-2
 
 Estado por tarjeta: `facilidad` (EF) y `intervalo` (días).

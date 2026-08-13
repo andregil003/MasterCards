@@ -121,10 +121,8 @@ body.nav-shown main { padding-bottom: calc(var(--nav-h) + 104px + env(safe-area-
 .header-logo {
   width: 24px; height: 24px;
   flex-shrink: 0;
-  border-radius: 7px;
-  object-fit: cover;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(34, 197, 94, 0.4));
 }
 .header-actions { display: flex; align-items: center; gap: 6px; }
 
@@ -196,7 +194,12 @@ body.nav-shown main { padding-bottom: calc(var(--nav-h) + 104px + env(safe-area-
   min-height: 72dvh;
   padding-top: 40px;
 }
-.login-wrap h2 { font-size: 1.6rem; margin-top: 12px; }
+.logo-img {
+  width: 96px; height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(34, 197, 94, 0.35));
+}
+.login-wrap h2 { font-size: 1.6rem; margin-top: 8px; }
 .login-sub { max-width: 300px; }
 .login-wrap .g_id_signin { margin-top: 8px; }
 
@@ -553,6 +556,37 @@ body.anim-sutil .flashcard.animate-success .card-face { box-shadow: none; }
 .srs-good { color: var(--good); border-color: rgba(34, 197, 94, 0.5); }
 .srs-easy { color: var(--easy); border-color: rgba(59, 130, 246, 0.5); }
 
+/* Respuesta por tipo de tarjeta */
+.study-answers { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.study-answers[hidden] { display: none; }
+.opt-btn {
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.2s, border-color 0.2s;
+}
+.opt-btn:active { transform: scale(0.98); }
+.opt-btn:disabled { cursor: default; }
+.opt-btn.right { border-color: var(--good); background: rgba(34, 197, 94, 0.12); color: var(--good); }
+.opt-btn.wrong { border-color: var(--danger); background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+.texto-check-row { display: flex; gap: 8px; }
+.texto-check-row .input { flex: 1; }
+.texto-check-row.right .input { border-color: var(--good); }
+.texto-check-row.wrong .input { border-color: var(--danger); }
+.texto-correcta {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--good);
+}
+.manual-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
 .edit-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -650,7 +684,57 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
 .nav-btn i { font-size: 1.15rem; }
 .nav-btn.active { color: var(--accent); }
 
+.empty-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  text-align: left;
+  max-width: 320px;
+}
+.empty-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--good);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ---------- Toast ---------- */
+.crash-box {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 130;
+  width: min(92vw, 420px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1f2937;
+  color: var(--text);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+.crash-box-icon { font-size: 1.3rem; color: var(--danger); flex-shrink: 0; }
+.crash-box-body { flex: 1; min-width: 0; }
+.crash-box-title { font-weight: 700; margin-bottom: 2px; }
+.crash-box-msg { font-size: 0.78rem; color: var(--muted); word-break: break-word; max-height: 4.6em; overflow-y: auto; }
 .toast {
   position: fixed;
   top: calc(68px + env(safe-area-inset-top));
@@ -796,6 +880,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
   .study-top { max-width: 640px; margin: 0 auto 14px; }
   .flashcard { max-width: 640px; margin-left: auto; margin-right: auto; }
   .srs-row { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .study-answers { max-width: 640px; margin-left: auto; margin-right: auto; }
 
   #ajustes { max-width: 640px; margin: 0 auto; }
 }

@@ -37,6 +37,11 @@ Script Properties bajo la clave `SPREADSHEET_ID`).
 | J | ProximaRevision | number | epoch ms. 0 = tarjeta nueva. |
 | K | UpdatedAt | number | epoch ms. Para LWW. |
 | L | Borrado | boolean | Soft-delete. |
+| M | Tipo | string | `tarjeta` (clásica), `abierta`, `opcion`, `texto`. Default `tarjeta` en tarjetas viejas. |
+| N | Opciones | string (JSON) | Solo tipo `opcion`: array `[{texto, correcta}]`. `''` si no aplica. |
+
+> Migración automática: `migrarTarjetas_` añade las columnas M/N a hojas
+> `Tarjetas` ya existentes (se ejecuta en cada arranque del backend).
 
 ### Hoja `Usuarios` (cuentas MasterCards)
 
@@ -70,7 +75,7 @@ Claves (prefijo `mc_`):
 | `mc_username` | Username de la cuenta MasterCards logueada. |
 | `mc_apitoken` | API token de la cuenta MasterCards (64 hex). Nunca se sube al repo. |
 | `mc_decks` | Array de mazos (`{mazoId,nombre,icono,color,orden,creado,updatedAt,borrado}`). |
-| `mc_cards` | Array de tarjetas (`{id,mazoId,icono,pregunta,respuesta,explicacion,intervalo,facilidad,proximaRevision,updatedAt,borrado}`). |
+| `mc_cards` | Array de tarjetas (`{id,mazoId,icono,pregunta,respuesta,explicacion,tipo,opciones,intervalo,facilidad,proximaRevision,updatedAt,borrado}`). |
 | `mc_syncQueue` | Array de operaciones pendientes (`{opId,tipo,createdAt,data}`). |
 | `mc_settings` | `{tema:'auto'\|'claro'\|'oscuro', animacion:'sutil'\|'hibrido'\|'vistoso', revelar:'fallar'\|'final', limiteNuevas:number, favoritas:{cardId:true}}` |
 | `mc_meta` | `{ultimaSync:number, nuevasHoy:{fecha:'YYYY-MM-DD',count:number}, sincronizando:boolean}` |

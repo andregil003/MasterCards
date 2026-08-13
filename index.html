@@ -38,6 +38,7 @@
     <!-- ===== LOGIN ===== -->
     <section class="screen" data-screen="login">
       <div class="login-wrap">
+        <img class="logo-img" src="assets/icons/icon-192.png" alt="MasterCards" />
         <h2>MasterCards</h2>
         <p class="muted login-sub" data-i18n="login_sub">Tus flashcards, siempre contigo.<br />Inicia sesión con Google para sincronizar.</p>
         <div id="g_id_onload" data-auto_select="false"></div>
@@ -66,6 +67,7 @@
     <!-- ===== REGISTRO (cuenta MasterCards) ===== -->
     <section class="screen" data-screen="registro" hidden>
       <div class="login-wrap">
+        <img class="logo-img" src="assets/icons/icon-192.png" alt="MasterCards" />
         <h2 data-i18n="create_account">Crear cuenta</h2>
         <form id="form-register" autocomplete="on">
           <label class="field-label" for="reg-username" data-i18n="username">Usuario</label>
@@ -88,6 +90,7 @@
     <!-- ===== CÓDIGOS DE RECUPERACIÓN ===== -->
     <section class="screen" data-screen="backupcodes" hidden>
       <div class="login-wrap">
+        <img class="logo-img" src="assets/icons/icon-192.png" alt="MasterCards" />
         <h2 data-i18n="backup_codes_title">Códigos de recuperación</h2>
         <p class="muted" data-i18n="backup_codes_hint">Guárdalos en un lugar seguro. Cada uno se usa UNA sola vez.</p>
         <div id="backup-codes-list" class="backup-codes"></div>
@@ -103,6 +106,7 @@
     <!-- ===== VERIFICACIÓN EN DOS PASOS (TOTP) ===== -->
     <section class="screen" data-screen="totp" hidden>
       <div class="login-wrap">
+        <img class="logo-img" src="assets/icons/icon-192.png" alt="MasterCards" />
         <h2 id="totp-title" data-i18n="totp_title">Verificación en dos pasos (opcional)</h2>
         <p class="muted" id="totp-hint" data-i18n="totp_hint">Escanea el QR con una app autenticadora (Google Authenticator, Authy…).</p>
         <div class="totp-qr" id="totp-qr"><img id="totp-qr-img" alt="QR" /></div>
@@ -122,6 +126,7 @@
     <!-- ===== RECUPERAR CUENTA ===== -->
     <section class="screen" data-screen="recuperar" hidden>
       <div class="login-wrap">
+        <img class="logo-img" src="assets/icons/icon-192.png" alt="MasterCards" />
         <h2 data-i18n="recover_title">Recuperar cuenta</h2>
         <form id="form-recover" autocomplete="on">
           <label class="field-label" for="rec-username" data-i18n="username">Usuario</label>
@@ -184,7 +189,11 @@
       <div id="dashboard-empty" class="empty hidden">
         <i class="fa-solid fa-layer-group"></i>
         <p data-i18n="empty_decks">No hay mazos todavía.</p>
-        <p class="muted" data-i18n="empty_decks_hint">Toca el botón + para crear el primero.</p>
+        <div class="empty-steps">
+          <div class="empty-step"><span class="step-num">1</span><span data-i18n="guide_step1">Crea un mazo con el botón +</span></div>
+          <div class="empty-step"><span class="step-num">2</span><span data-i18n="guide_step2">Pega el JSON de una IA (botón «Copiar prompt») o añade una tarjeta individual</span></div>
+          <div class="empty-step"><span class="step-num">3</span><span data-i18n="guide_step3">Pulsa «Estudiar Hoy» para empezar</span></div>
+        </div>
       </div>
 
       <button id="fab" class="fab" aria-label="Crear mazo" data-i18n-aria="create_deck">
@@ -230,8 +239,19 @@
 
       <!-- Modo individual -->
       <div id="panel-single" hidden>
+        <label class="field-label" data-i18n="card_type">Tipo de tarjeta</label>
+        <select id="single-tipo" class="input">
+          <option value="tarjeta" data-i18n="tipo_tarjeta">Tarjeta clásica</option>
+          <option value="abierta" data-i18n="tipo_abierta">Pregunta abierta</option>
+          <option value="opcion" data-i18n="tipo_opcion">Opción múltiple</option>
+          <option value="texto" data-i18n="tipo_texto">Texto libre</option>
+        </select>
         <label class="field-label" data-i18n="question_label">Pregunta</label>
         <textarea id="single-q" class="input textarea" rows="2"></textarea>
+        <div id="single-opciones-wrap" hidden>
+          <label class="field-label" data-i18n="opciones_label">Opciones (una por línea; marca la correcta con *)</label>
+          <textarea id="single-o" class="input textarea" rows="4" placeholder="*Madrid&#10;Barcelona&#10;Sevilla"></textarea>
+        </div>
         <label class="field-label" data-i18n="answer_label">Respuesta</label>
         <textarea id="single-a" class="input textarea" rows="2"></textarea>
         <label class="field-label"><span data-i18n="explanation_label">Explicación (¿por qué?)</span> <span class="muted" data-i18n="optional">opcional</span></label>
@@ -277,6 +297,8 @@
           </div>
         </div>
 
+        <div id="study-answers" class="study-answers" hidden></div>
+
         <div id="edit-panel" class="edit-panel" hidden>
           <label class="field-label" data-i18n="question_label">Pregunta</label>
           <textarea id="edit-q" class="input textarea" rows="3"></textarea>
@@ -284,6 +306,17 @@
           <textarea id="edit-a" class="input textarea" rows="3"></textarea>
           <label class="field-label"><span data-i18n="explanation_label">Explicación</span> <span class="muted" data-i18n="optional">opcional</span></label>
           <textarea id="edit-e" class="input textarea" rows="2"></textarea>
+          <label class="field-label" data-i18n="card_type">Tipo de tarjeta</label>
+          <select id="edit-tipo" class="input">
+            <option value="tarjeta" data-i18n="tipo_tarjeta">Tarjeta clásica</option>
+            <option value="abierta" data-i18n="tipo_abierta">Pregunta abierta</option>
+            <option value="opcion" data-i18n="tipo_opcion">Opción múltiple</option>
+            <option value="texto" data-i18n="tipo_texto">Texto libre</option>
+          </select>
+          <div id="edit-opciones-wrap" hidden>
+            <label class="field-label" data-i18n="opciones_label">Opciones (una por línea; marca la correcta con *)</label>
+            <textarea id="edit-o" class="input textarea" rows="4"></textarea>
+          </div>
           <div class="row-gap">
             <button id="btn-save-edit" class="btn primary"><i class="fa-solid fa-check"></i> <span data-i18n="save">Guardar</span></button>
             <button id="btn-cancel-edit" class="btn ghost" data-i18n="cancel">Cancelar</button>
@@ -395,6 +428,14 @@
   </nav>
 
   <div id="toast" class="toast hidden"></div>
+  <div id="crash-box" class="crash-box hidden" role="alert">
+    <i class="fa-solid fa-triangle-exclamation crash-box-icon"></i>
+    <div class="crash-box-body">
+      <p class="crash-box-title" data-i18n="crash_title">Algo salió mal</p>
+      <p id="crash-msg" class="crash-box-msg"></p>
+    </div>
+    <button id="crash-reload" class="btn primary small-btn" data-i18n="crash_reload">Recargar</button>
+  </div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
   <div id="modal" class="modal hidden">
     <div class="modal-box">

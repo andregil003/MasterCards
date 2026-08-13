@@ -132,3 +132,18 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   mal); el logo queda solo como icono pequeño en la cabecera.
 - 2026-08-12: Unificación de espaciados (reglas `.btn.block + .btn.block`,
   márgenes de `.field-label`/`.error`, `hr` de Seguridad, `.login-links`).
+- 2026-08-12: Google login 405 en PWA instalada → GIS pasa a `ux_mode:'popup'`
+  en Android/desktop (redirect solo iOS); URIs de redirección registradas en
+  Cloud Console (dominio + `/MasterCards` con y sin barra). Se añaden
+  manejadores globales de error (`window.onerror`/`unhandledrejection`) con un
+  `crash-box` visible (mensaje + recargar) para evitar pantallas en blanco.
+- 2026-08-12: El logo oficial se regenera como **PNG transparente** (tarjeta
+  blanca redondeada + raya verde diagonal, `assets/icons/icon-192.png`) y se
+  vuelve a colocar en las 5 pantallas de cuenta (`logo-img`, 96px, con sombra
+  verde suave) además de la cabecera. SW a `mastercards-v5`.
+- 2026-08-12: **Tipos de tarjeta**: `tarjeta` (4 botones SRS), `abierta`
+  (manual «La sabía»/«No la sabía»), `opcion` (opción múltiple, una
+  oportunidad), `texto` (respuesta escrita con `normalizarTexto`). Los tipos
+  automáticos gradúan q=4/q=1. Columnas nuevas `Tipo`/`Opciones` en la hoja
+  `Tarjetas` con migración automática. JSON de importación acepta `t` y `o`;
+  formulario individual y editor con selector de tipo. `scripts/test.js` 61/61.

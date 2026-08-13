@@ -111,7 +111,24 @@ var I18N = {
       meta_total: '{a} tarjetas',
       empty_decks: 'No hay mazos todavía.',
       empty_decks_hint: 'Toca el botón + para crear el primero.',
+      guide_step1: 'Crea un mazo con el botón +',
+      guide_step2: 'Pega el JSON de una IA (botón «Copiar prompt») o añade una tarjeta individual',
+      guide_step3: 'Pulsa «Estudiar Hoy» para empezar',
       link_copied: 'Enlace copiado al portapapeles',
+      // Tipos de tarjeta
+      card_type: 'Tipo de tarjeta',
+      tipo_tarjeta: 'Tarjeta clásica',
+      tipo_abierta: 'Pregunta abierta',
+      tipo_opcion: 'Opción múltiple',
+      tipo_texto: 'Texto libre',
+      opciones_label: 'Opciones (una por línea; marca la correcta con *)',
+      err_opciones: 'Marca la correcta con * y añade al menos 2 opciones',
+      check: 'Comprobar',
+      type_answer: 'Escribe tu respuesta',
+      reveal_answer: 'Ver respuesta',
+      knew_it: 'La sabía',
+      didnt_know: 'No la sabía',
+      abierta_hint: 'Piensa la respuesta y luego compruébala.',
       // Crear mazo
       deck_name: 'Nombre del mazo',
       deck_name_ph: 'Ej: Inglés Básico',
@@ -211,7 +228,7 @@ var I18N = {
       // Prompt para IA (copiar)
       prompt_intro: 'Actúa como un experto creando tarjetas flash. Crea un mazo sobre el tema "{a}" con tarjetas pregunta/respuesta claras y concisas.',
       prompt_rule1: 'Genera EXACTAMENTE este formato JSON, sin texto adicional:',
-      prompt_rule2: 'Usa "q" para la pregunta, "a" para la respuesta y "e" (opcional) para una breve explicación de por qué es correcta.',
+      prompt_rule2: 'Usa "q" para la pregunta, "a" para la respuesta y "e" (opcional) para una breve explicación. Tipos opcionales: "t":"opcion" con "o":[{"t":"Opción","c":true}] (una correcta), "t":"texto" (se escribe la respuesta) y "t":"abierta" (autoevaluación).',
       prompt_rule3: 'Entre 10 y 30 tarjetas, en español.',
       // Cuentas MasterCards (usuario + contraseña)
       or: 'o',
@@ -269,6 +286,9 @@ var I18N = {
       err_bad_request: 'Solicitud inválida',
       err_internal: 'Error del servidor. Inténtalo más tarde.',
       err_network: 'Sin conexión. Conéctate e inténtalo de nuevo.',
+      crash_title: 'Algo salió mal',
+      crash_reload: 'Recargar',
+      crash_generic: 'Error inesperado. Recarga la app para continuar.',
       welcome_created: '¡Cuenta creada!',
       welcome_recovered: 'Contraseña restablecida',
       pw_changed: 'Contraseña cambiada',
@@ -317,7 +337,24 @@ var I18N = {
       meta_total: '{a} cards',
       empty_decks: 'No decks yet.',
       empty_decks_hint: 'Tap the + button to create your first one.',
+      guide_step1: 'Create a deck with the + button',
+      guide_step2: 'Paste an AI-generated JSON (the «Copy prompt» button) or add a single card',
+      guide_step3: 'Tap «Study Today» to get started',
       link_copied: 'Link copied to clipboard',
+      // Card types
+      card_type: 'Card type',
+      tipo_tarjeta: 'Classic card',
+      tipo_abierta: 'Open question',
+      tipo_opcion: 'Multiple choice',
+      tipo_texto: 'Free text',
+      opciones_label: 'Options (one per line; mark the correct one with *)',
+      err_opciones: 'Mark the correct one with * and add at least 2 options',
+      check: 'Check',
+      type_answer: 'Type your answer',
+      reveal_answer: 'Show answer',
+      knew_it: 'I knew it',
+      didnt_know: "I didn't know",
+      abierta_hint: 'Think of the answer, then check it.',
       // Create deck
       deck_name: 'Deck name',
       deck_name_ph: 'e.g. Basic English',
@@ -417,7 +454,7 @@ var I18N = {
       // AI prompt (copy)
       prompt_intro: 'Act as an expert flashcard creator. Make a deck about "{a}" with clear, concise question/answer cards.',
       prompt_rule1: 'Output EXACTLY this JSON format, with no extra text:',
-      prompt_rule2: 'Use "q" for the question, "a" for the answer and "e" (optional) for a short explanation of why it is correct.',
+      prompt_rule2: 'Use "q" for the question, "a" for the answer and "e" (optional) for a short explanation. Optional types: "t":"opcion" with "o":[{"t":"Option","c":true}] (one correct), "t":"texto" (type the answer) and "t":"abierta" (self-graded).',
       prompt_rule3: 'Between 10 and 30 cards, in English.',
       // MasterCards accounts (username + password)
       or: 'or',
@@ -475,6 +512,9 @@ var I18N = {
       err_bad_request: 'Invalid request',
       err_internal: 'Server error. Try again later.',
       err_network: 'Offline. Connect and try again.',
+      crash_title: 'Something went wrong',
+      crash_reload: 'Reload',
+      crash_generic: 'Unexpected error. Reload the app to continue.',
       welcome_created: 'Account created!',
       welcome_recovered: 'Password reset',
       pw_changed: 'Password changed',
@@ -797,9 +837,13 @@ var Auth = {
       return;
     }
     var btn = document.querySelector('.g_id_signin');
+    // iOS Safari bloquea popups → flujo redirect. En el resto (Android instalado,
+    // desktop) usamos popup: evita el redirect_uri_mismatch/405 de las PWAs instaladas.
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     google.accounts.id.initialize({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
-      ux_mode: 'redirect', // iOS Safari bloquea popups → flujo de redirección
+      ux_mode: isIOS ? 'redirect' : 'popup',
       callback: function (resp) { Auth.handleCredential(resp.credential); },
       auto_select: false
     });
@@ -1581,6 +1625,58 @@ function sm2(facilidad, intervalo, q) {
 function esNueva(card) { return !card.proximaRevision; }
 function estaVencida(card) { return !!card.proximaRevision && card.proximaRevision <= Date.now(); }
 
+// ------------------------------------------------------------------
+// Tipos de tarjeta (funciones puras, cubiertas en scripts/test.js)
+// ------------------------------------------------------------------
+
+var TIPOS_CARD = ['tarjeta', 'abierta', 'opcion', 'texto'];
+
+/** Normaliza texto para comparar respuestas: minúsculas, sin tildes, sin puntuación. */
+function normalizarTexto(s) {
+  return String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/^\s+|\s+$/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/** Valida y normaliza un array de opciones [{texto, correcta}]. Devuelve null si no es válido. */
+function normalizarOpciones(o) {
+  if (!Array.isArray(o)) return null;
+  var out = [];
+  for (var i = 0; i < o.length; i++) {
+    var x = o[i];
+    var texto = typeof x === 'string' ? x : String((x && (x.texto != null ? x.texto : x.t)) || '');
+    texto = texto.trim();
+    if (!texto) continue;
+    var correcta = typeof x === 'object' && x !== null && (!!x.correcta || !!x.c);
+    out.push({ texto: texto, correcta: correcta });
+  }
+  if (out.length < 2 || !out.some(function (x) { return x.correcta; })) return null;
+  return out;
+}
+
+/** Parsea el textarea de opciones (una por línea; `*` marca la correcta). Devuelve null si no es válido. */
+function parseLineasOpciones(text) {
+  var lines = String(text || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  var opts = [];
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i];
+    var correcta = /^\*/.test(l);
+    var txt = l.replace(/^\*+/, '').trim();
+    if (txt) opts.push({ texto: txt, correcta: correcta });
+  }
+  if (opts.length < 2 || !opts.some(function (o) { return o.correcta; })) return null;
+  return opts;
+}
+
+/** Convierte las opciones de una tarjeta a formato del textarea de edición. */
+function opcionesParaEditar(card) {
+  return (card.opciones || []).map(function (o) {
+    return (o.correcta ? '*' : '') + o.texto;
+  }).join('\n');
+}
+
 /** Registra una tarjeta nueva estudiada hoy (para el límite diario). */
 function contarNuevaHoy() {
   var meta = Store.meta();
@@ -1671,11 +1767,12 @@ var Study = {
   },
 
   showCard: function (card) {
+    Study._answered = false;
     var fc = document.getElementById('flashcard');
     fc.classList.remove('flip', 'animate-error', 'animate-success');
     fc.classList.remove('editing');
-    document.getElementById('srs-buttons').hidden = false;
     document.getElementById('edit-panel').hidden = true;
+    Study.renderAnswers(card);
     document.getElementById('card-icon').className = 'fa-solid fa-' + (card.icono || 'bolt') + ' card-deco';
     document.getElementById('card-q').innerHTML = md(card.pregunta);
     document.getElementById('card-a').innerHTML = md(card.respuesta);
@@ -1697,14 +1794,163 @@ var Study = {
     document.getElementById('edit-q').value = card.pregunta;
     document.getElementById('edit-a').value = card.respuesta;
     document.getElementById('edit-e').value = card.explicacion || '';
+    var editTipo = document.getElementById('edit-tipo');
+    editTipo.value = TIPOS_CARD.indexOf(card.tipo) !== -1 ? card.tipo : 'tarjeta';
+    document.getElementById('edit-o').value = opcionesParaEditar(card);
+    document.getElementById('edit-opciones-wrap').hidden = editTipo.value !== 'opcion';
   },
 
-  /** Respuesta del usuario. q: 1=Otra vez, 3=Difícil, 4=Bien, 5=Fácil. */
+  /** Tipo efectivo de la tarjeta (con datos válidos). */
+  tipoDe: function (card) {
+    if (card.tipo === 'opcion' && card.opciones && card.opciones.length >= 2) return 'opcion';
+    if (card.tipo === 'texto' || card.tipo === 'abierta') return card.tipo;
+    return 'tarjeta';
+  },
+
+  /** Construye los controles de respuesta según el tipo de tarjeta. */
+  renderAnswers: function (card) {
+    var wrap = document.getElementById('study-answers');
+    var srs = document.getElementById('srs-buttons');
+    var tipo = Study.tipoDe(card);
+    wrap.innerHTML = '';
+    wrap.hidden = tipo === 'tarjeta';
+    srs.hidden = tipo !== 'tarjeta';
+    if (tipo === 'opcion') {
+      var fc = document.getElementById('flashcard');
+      if (fc.classList.contains('flip')) return; // ya respondida
+      // Barajar opciones para que el orden no se repita
+      var idxs = card.opciones.map(function (_, i) { return i; });
+      for (var i = idxs.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = idxs[i]; idxs[i] = idxs[j]; idxs[j] = tmp;
+      }
+      idxs.forEach(function (idx) {
+        var o = card.opciones[idx];
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'opt-btn';
+        b.textContent = o.texto;
+        b.dataset.idx = String(idx);
+        b.addEventListener('click', function () { Study.gradeOption(card, idx, b, wrap); });
+        wrap.appendChild(b);
+      });
+    } else if (tipo === 'texto') {
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'input';
+      inp.autocomplete = 'off';
+      inp.autocapitalize = 'off';
+      inp.spellcheck = false;
+      inp.placeholder = t('type_answer');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn primary';
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + t('check');
+      var row = document.createElement('div');
+      row.className = 'texto-check-row';
+      row.appendChild(inp);
+      row.appendChild(btn);
+      wrap.appendChild(row);
+      function doCheck() {
+        if (btn.disabled) return;
+        var ok = inp.value.trim() !== '' && normalizarTexto(inp.value) === normalizarTexto(card.respuesta);
+        Study.gradeText(card, ok, inp, btn, row);
+      }
+      btn.addEventListener('click', doCheck);
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); doCheck(); }
+      });
+      setTimeout(function () { inp.focus(); }, 60);
+    } else if (tipo === 'abierta') {
+      var fc2 = document.getElementById('flashcard');
+      if (fc2.classList.contains('flip')) {
+        Study.renderManualAbierta(card);
+      } else {
+        var hint = document.createElement('p');
+        hint.className = 'muted small';
+        hint.textContent = t('abierta_hint');
+        var reveal = document.createElement('button');
+        reveal.type = 'button';
+        reveal.className = 'btn block';
+        reveal.innerHTML = '<i class="fa-solid fa-eye"></i> ' + t('reveal_answer');
+        reveal.addEventListener('click', function () {
+          fc2.classList.add('flip');
+          Study.renderManualAbierta(card);
+        });
+        wrap.appendChild(hint);
+        wrap.appendChild(reveal);
+      }
+    }
+  },
+
+  /** Botones "La sabía / No la sabía" para tarjetas abiertas ya reveladas. */
+  renderManualAbierta: function (card) {
+    var wrap = document.getElementById('study-answers');
+    if (Study._answered) return;
+    var row = document.createElement('div');
+    row.className = 'manual-row';
+    var known = document.createElement('button');
+    known.type = 'button';
+    known.className = 'btn primary';
+    known.innerHTML = '<i class="fa-solid fa-check"></i> ' + t('knew_it');
+    known.addEventListener('click', function () { Study.answer(4); });
+    var not = document.createElement('button');
+    not.type = 'button';
+    not.className = 'btn danger';
+    not.innerHTML = '<i class="fa-solid fa-xmark"></i> ' + t('didnt_know');
+    not.addEventListener('click', function () { Study.answer(1); });
+    row.appendChild(known);
+    row.appendChild(not);
+    wrap.appendChild(row);
+  },
+
+  /** Al voltear la tarjeta: muestra los botones manuales si es abierta. */
+  onFlip: function () {
+    var card = Study.queue[Study.index];
+    if (!card || Study.tipoDe(card) !== 'abierta') return;
+    var fc = document.getElementById('flashcard');
+    if (fc.classList.contains('flip')) {
+      var wrap = document.getElementById('study-answers');
+      wrap.innerHTML = '';
+      Study.renderManualAbierta(card);
+    }
+  },
+
+  /** Corrige una opción múltiple. */
+  gradeOption: function (card, idx, btn, wrap) {
+    if (Study._answered) return;
+    var correct = !!card.opciones[idx].correcta;
+    wrap.querySelectorAll('.opt-btn').forEach(function (b) {
+      b.disabled = true;
+      var o = card.opciones[Number(b.dataset.idx)];
+      if (o.correcta) b.classList.add('right');
+      else if (b === btn) b.classList.add('wrong');
+    });
+    Study.answer(correct ? 4 : 1);
+  },
+
+  /** Corrige una respuesta de texto libre. */
+  gradeText: function (card, ok, inp, btn, row) {
+    if (Study._answered) return;
+    btn.disabled = true;
+    inp.disabled = true;
+    row.classList.add(ok ? 'right' : 'wrong');
+    if (!ok) {
+      var correct = document.createElement('span');
+      correct.className = 'texto-correcta';
+      correct.textContent = card.respuesta;
+      row.appendChild(correct);
+    }
+    Study.answer(ok ? 4 : 1);
+  },
+
+  /** Respuesta del usuario. q: 1=Otra vez/No, 3=Difícil, 4=Bien/Sí, 5=Fácil. */
   answer: function (q) {
     var card = Study.queue[Study.index];
-    if (!card) return;
-    var btns = document.querySelectorAll('.srs');
-    btns.forEach(function (b) { b.disabled = true; });
+    if (!card || Study._answered) return;
+    Study._answered = true;
+    var controls = document.querySelectorAll('.srs, #study-answers button, #study-answers input');
+    controls.forEach(function (c) { c.disabled = true; });
 
     var correct = q >= 3;
     Study.log.push({ card: card, q: q, correct: correct });
@@ -1735,8 +1981,10 @@ var Study = {
     }
 
     // --- Fallo: comportamiento según configuración ---
+    var esTipo = Study.tipoDe(card) !== 'tarjeta';
     if (!correct) {
-      if (Store.settings().revelar === 'fallar') {
+      // En tarjetas tipadas siempre se revela la respuesta (no hay opción de leerla antes).
+      if (Store.settings().revelar === 'fallar' || esTipo) {
         // Mostrar la respuesta + explicación inmediatamente
         fc.classList.add('flip');
       }
@@ -1752,8 +2000,9 @@ var Study = {
     Study.index++;
     // Si se reveló la respuesta al fallar, dar tiempo a leerla; si no, avance rápido.
     var revealDelay = (!correct && Store.settings().revelar === 'fallar') ? 1500 : 800;
+    if (esTipo) revealDelay = 2200; // las tipadas dejan leer el feedback/corrección
     setTimeout(function () {
-      btns.forEach(function (b) { b.disabled = false; });
+      controls.forEach(function (c) { c.disabled = false; });
       Study.render();
     }, revealDelay);
   },
@@ -1789,16 +2038,26 @@ var Study = {
     var card = cardById(id);
     if (!card) return;
     var now = Date.now();
+    var tipo = document.getElementById('edit-tipo').value;
+    if (TIPOS_CARD.indexOf(tipo) === -1) tipo = 'tarjeta';
+    var opciones = null;
+    if (tipo === 'opcion') {
+      opciones = parseLineasOpciones(document.getElementById('edit-o').value);
+      if (!opciones) { toast(t('err_opciones')); return; }
+    }
     var updated = Object.assign({}, card, {
       pregunta: document.getElementById('edit-q').value,
       respuesta: document.getElementById('edit-a').value,
       explicacion: document.getElementById('edit-e').value,
+      tipo: tipo,
+      opciones: opciones,
       updatedAt: now
     });
     upsertCardLocal(updated);
     SyncEngine.enqueue('editCard', {
       id: id, pregunta: updated.pregunta, respuesta: updated.respuesta,
-      explicacion: updated.explicacion, updatedAt: now
+      explicacion: updated.explicacion, tipo: tipo, opciones: opciones,
+      updatedAt: now
     });
     document.getElementById('edit-panel').hidden = true;
     document.getElementById('srs-buttons').hidden = false;
@@ -1997,6 +2256,15 @@ var UI = {
     });
 
     document.getElementById('btn-create-deck').addEventListener('click', UI.createDeck);
+
+    // Tipo de tarjeta individual → muestra/oculta el editor de opciones
+    function bindTipo(selId, wrapId) {
+      var sel = document.getElementById(selId);
+      var wrap = document.getElementById(wrapId);
+      sel.addEventListener('change', function () { wrap.hidden = sel.value !== 'opcion'; });
+    }
+    bindTipo('single-tipo', 'single-opciones-wrap');
+    bindTipo('edit-tipo', 'edit-opciones-wrap');
   },
 
   renderIconPicker: function (containerId, key, current) {
@@ -2066,7 +2334,13 @@ var UI = {
       var q = document.getElementById('single-q').value.trim();
       var a = document.getElementById('single-a').value.trim();
       if (!q || !a) { toast(t('err_qa_required')); return; }
-      cardsRaw = [{ q: q, a: a, e: document.getElementById('single-e').value.trim() }];
+      var tipo = document.getElementById('single-tipo').value;
+      var opciones = null;
+      if (tipo === 'opcion') {
+        opciones = parseLineasOpciones(document.getElementById('single-o').value);
+        if (!opciones) { toast(t('err_opciones')); return; }
+      }
+      cardsRaw = [{ q: q, a: a, e: document.getElementById('single-e').value.trim(), t: tipo, o: opciones }];
     }
 
     var now = Date.now();
@@ -2081,9 +2355,12 @@ var UI = {
     };
 
     var tarjetas = cardsRaw.map(function (c) {
+      var tipo = TIPOS_CARD.indexOf(c.t) !== -1 ? c.t : 'tarjeta';
+      var opciones = (tipo === 'opcion') ? normalizarOpciones(c.o) : null;
+      if (tipo === 'opcion' && !opciones) tipo = 'tarjeta'; // opciones inválidas → clásica
       return {
         id: uuid(), mazoId: mazoId, icono: c.i || '', pregunta: c.q || '',
-        respuesta: c.a || '', explicacion: c.e || '',
+        respuesta: c.a || '', explicacion: c.e || '', tipo: tipo, opciones: opciones,
         intervalo: 0, facilidad: 2.5, proximaRevision: 0,
         updatedAt: now, borrado: false
       };
@@ -2100,7 +2377,8 @@ var UI = {
     SyncEngine.enqueue('createCards', {
       mazoId: mazoId,
       tarjetas: tarjetas.map(function (t) {
-        return { id: t.id, icono: t.icono, pregunta: t.pregunta, respuesta: t.respuesta, explicacion: t.explicacion };
+        return { id: t.id, icono: t.icono, pregunta: t.pregunta, respuesta: t.respuesta,
+                 explicacion: t.explicacion, tipo: t.tipo, opciones: t.opciones };
       })
     });
 
@@ -2111,6 +2389,9 @@ var UI = {
     document.getElementById('single-q').value = '';
     document.getElementById('single-a').value = '';
     document.getElementById('single-e').value = '';
+    document.getElementById('single-o').value = '';
+    document.getElementById('single-tipo').value = 'tarjeta';
+    document.getElementById('single-opciones-wrap').hidden = true;
     UI.renderDashboard();
     UI.show('dashboard');
     toast(t('deck_created') + ': ' + nombre);
@@ -2353,7 +2634,8 @@ function initPromptCopy() {
     var nombre = document.getElementById('deck-name').value.trim();
     var prompt = t('prompt_intro', { a: nombre || '[TEMA]' }) + '\n\n' +
       t('prompt_rule1') + '\n' +
-      '[{"q":"...","a":"...","e":"..."}]\n\n' +
+      '[{"q":"...","a":"..."}]\n' +
+      '[{"q":"¿...?","a":"...","t":"opcion","o":[{"t":"Opción","c":true},{"t":"Otra"}]}]\n\n' +
       t('prompt_rule2') + '\n' +
       t('prompt_rule3');
     copyText(prompt).then(function () { toast(t('prompt_copied')); });
@@ -2432,9 +2714,16 @@ function boot() {
 
   // --- Estudio: eventos de la tarjeta ---
   var fc = document.getElementById('flashcard');
-  fc.addEventListener('click', function () { fc.classList.toggle('flip'); });
+  fc.addEventListener('click', function () {
+    fc.classList.toggle('flip');
+    Study.onFlip();
+  });
   fc.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fc.classList.toggle('flip'); }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fc.classList.toggle('flip');
+      Study.onFlip();
+    }
   });
   document.querySelectorAll('.srs').forEach(function (btn) {
     btn.addEventListener('click', function () { Study.answer(Number(btn.dataset.q)); });
@@ -2443,6 +2732,7 @@ function boot() {
     e.stopPropagation();
     document.getElementById('edit-panel').hidden = false;
     document.getElementById('srs-buttons').hidden = true;
+    document.getElementById('study-answers').hidden = true;
   });
   document.getElementById('btn-save-edit').addEventListener('click', function () {
     Study.saveEdit(document.getElementById('btn-edit-card').dataset.id);
@@ -2568,3 +2858,25 @@ UI.initDrag = function () {
 
 // Arranque
 document.addEventListener('DOMContentLoaded', boot);
+
+// ------------------------------------------------------------------
+// Errores globales: nunca pantallas en blanco silenciosas.
+// ------------------------------------------------------------------
+function showCrash(msg) {
+  var box = document.getElementById('crash-box');
+  if (!box) return;
+  document.getElementById('crash-msg').textContent = msg || t('crash_generic');
+  box.classList.remove('hidden');
+}
+window.addEventListener('error', function (e) {
+  showCrash(e && e.message ? e.message : 'Error');
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e && e.reason;
+  showCrash(r && r.message ? r.message : String(r));
+});
+if (document.getElementById('crash-reload')) {
+  document.getElementById('crash-reload').addEventListener('click', function () {
+    location.reload();
+  });
+}
