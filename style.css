@@ -694,3 +694,51 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
   font-size: 0.9em;
 }
 .markdown ul { text-align: left; padding-left: 20px; }
+
+/* ---------- Cuentas MasterCards (login/registro/recuperar/TOTP) ---------- */
+.login-wrap form { width: 100%; max-width: 380px; text-align: left; }
+.login-wrap form > .btn.block { margin-top: 20px; }
+.login-wrap > .btn.block { margin-top: 16px; }
+.login-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0 4px; width: 100%; max-width: 380px;
+  color: var(--muted); font-size: 0.8rem;
+}
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.login-links { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+.link-btn { background: none; border: none; color: var(--accent); font-size: 0.9rem; padding: 6px; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }
+.muted.small { font-size: 0.75rem; }
+.input.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; letter-spacing: 1px; }
+.check { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0; font-size: 0.9rem; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+
+.pw-meter { margin-top: 6px; }
+.pw-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin-bottom: 8px; }
+.pw-fill { display: block; height: 100%; width: 0; transition: width 0.2s, background 0.2s; }
+.pw-fill[data-lvl="0"], .pw-fill[data-lvl="1"] { width: 40%; background: #ef4444; }
+.pw-fill[data-lvl="2"], .pw-fill[data-lvl="3"] { width: 80%; background: #f59e0b; }
+.pw-fill[data-lvl="4"] { width: 100%; background: #22c55e; }
+.pw-reqs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.pw-reqs li { font-size: 0.75rem; color: var(--muted); }
+.pw-reqs li.ok { color: #22c55e; }
+.pw-reqs li i { margin-right: 4px; font-size: 0.7rem; }
+
+.backup-codes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; width: 100%; max-width: 380px; }
+.backup-codes .bc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+.totp-qr { margin: 16px auto; text-align: center; }
+.totp-qr img { width: 200px; height: 200px; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); background: #fff; }
+
+/* Separación de botones apilados en formularios y pantallas de cuenta */
+#security-section form > .btn.block { margin-top: 20px; }
+#ajustes > .btn.block { margin-top: 14px; }

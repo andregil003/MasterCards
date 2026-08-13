@@ -21,20 +21,27 @@
    `todayStart()`, `fmtFecha()`, `saveJSON()`.
 3. **Store** — getters/setters de localStorage con carga perezosa y cache en
    memoria; tolerancia a cuotas (`try/catch` + toast).
-4. **Auth** — init GIS (redirect flow), manejo de callback, refresh de token.
-5. **Sync Engine** — `enqueue`, `flushQueue`, `pull`, `merge`, backoff,
+4. **Auth** — sesión dual: **GIS** (redirect flow, callback, refresh) o cuenta
+   **MC** (`mode:'google'|'mc'`, `hasSession()`, `owner()` → email o username,
+   `startMcSession()`, `postAuth(action, body)` con errores `{code}`).
+5. **Cuentas MC (4.5)** — pantallas de login/registro/códigos/recuperar/TOTP:
+   `validarPasswordMC()` (política), medidor de fortaleza, backup codes (copiar/
+   descargar), QR TOTP (`api.qrserver.com` + secreto manual), flujo
+   registro → códigos → TOTP opcional.
+6. **Sync Engine** — `enqueue`, `flushQueue`, `pull`, `merge`, backoff,
    listeners `online`/`visibilitychange`, indicador de nube. **El bloque más
    comentado del fichero.**
-6. **SRS** — `sm2(card, q)`, `sesionHoy(deckId?, limit)`, contador diario.
-7. **Router** — `show('login'|'dashboard'|'crearMazo'|'estudio'|'ajustes'|'resumen')`
-   con secciones `data-screen`.
-8. **Dashboard** — render de mazos, búsqueda + filtros, drag (pointer events),
+7. **SRS** — `sm2(card, q)`, `sesionHoy(deckId?, limit)`, contador diario.
+8. **Router** — `show(...)` con secciones `data-screen`:
+   `login|registro|backupcodes|totp|recuperar|dashboard|crearMazo|estudio|ajustes|resumen`.
+9. **Dashboard** — render de mazos, búsqueda + filtros, drag (pointer events),
    compartir, FAB.
-9. **CrearMazo** — JSON paste + tarjeta individual + picker de ícono/color.
-10. **Estudio** — flip, editar/borrar, botones SRS, animaciones, buffer de
+10. **CrearMazo** — JSON paste + tarjeta individual + picker de ícono/color.
+11. **Estudio** — flip, editar/borrar, botones SRS, animaciones, buffer de
     resumen, revelar al fallar/final.
-11. **Ajustes** — persiste `mc_settings`, export/borrado/logout.
-12. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
+12. **Ajustes** — persiste `mc_settings`, export/borrado/logout; para cuentas MC
+    bloque de **Seguridad** (cambiar contraseña, TOTP, regenerar códigos).
+13. **Boot** — secuencia inicial (sesión → flush → pull → merge → router).
 
 ## 5.3 Markdown ligero (`md()`)
 
@@ -95,7 +102,7 @@ Keyframes en `style.css`:
 
 ## 5.8 Service Worker (`sw.js`)
 
-- `CACHE = 'mastercards-v1'` (bump de versión para invalidar).
+- `CACHE = 'mastercards-v3'` (bump de versión para invalidar).
 - Precache: `index.html`, `style.css`, `app.js`, `manifest.json`,
   `assets/fontawesome/css/all.min.css`, woff2 de FA, íconos PWA.
 - Estrategias: **cache-first** para assets, **network-first con fallback al

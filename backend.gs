@@ -15,14 +15,30 @@
  *  ALMACENAMIENTO:
  *  - Se crea automáticamente una hoja de cálculo "MasterCards" la
  *    primera vez que se usa (su ID se guarda en Script Properties).
- *  - Dos hojas: "Mazos" y "Tarjetas".
+ *  - Tres hojas: "Mazos", "Tarjetas" y "Usuarios".
+ *
+ *  AUTENTICACIÓN (dos vías):
+ *  1. Cuentas MasterCards (usuario + contraseña):
+ *     - Contraseñas con PBKDF2-HMAC-SHA256 + salt aleatorio por usuario
+ *       (construido a mano sobre Utilities.computeDigest; iteraciones por fila).
+ *     - Sesión por API token opaco (64 hex) del que solo se guarda su
+ *       SHA-256 en la hoja. El cliente guarda el token crudo.
+ *     - Recuperación sin email: 10 backup codes (SHA-256 de cada uno)
+ *       y/o TOTP (RFC 6238, secreto en Script Properties, NO en la hoja).
+ *     - Bloqueo temporal tras 5 intentos fallidos (15 min).
+ *  2. Google (GIS): ID token OIDC verificado contra
+ *     oauth2.googleapis.com/tokeninfo + comprobación de `aud`.
+ *  La función verifyAnyToken_() decide por el formato del token:
+ *  JWT (3 segmentos con puntos) → Google; hex (64) → cuenta MC.
+ *  Por eso el pull (?email&token) y el flush ({token, syncOperations})
+ *  usan el MISMO formato para ambas vías.
  *
  *  SEGURIDAD:
- *  - Autenticación mediante ID token de Google (GIS). El backend lo
- *    verifica llamando a oauth2.googleapis.com/tokeninfo y comprueba
- *    que `aud` sea el Client ID de la app (ver CLIENT_ID abajo).
  *  - El endpoint de "compartir" (?share_id=) es público y de SOLO
  *    LECTURA por diseño: cualquiera con el enlace puede importar.
+ *  - El secreto TOTP vive en Script Properties ('TOTP:<usuario>'),
+ *    accesible solo desde el script; la hoja guarda únicamente hashes.
+ *  - reset manual (dueño): adminResetPassword(usuario, nueva).
  * ============================================================
  */
 
@@ -35,6 +51,11 @@ var CLIENT_ID = '830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleuserco
 
 var SHEET_NAME = 'MasterCards';
 var SS_PROP_KEY = 'SPREADSHEET_ID';
+
+// Parámetros de las cuentas MasterCards
+var PBKDF2_ITERACIONES = 10000;     // subible en el futuro (se guarda por fila)
+var MAX_INTENTOS = 5;               // intentos fallidos antes del bloqueo
+var BLOQUEO_MS = 15 * 60 * 1000;    // 15 minutos de bloqueo
 
 // Columnas de la hoja "Mazos" (1-indexed)
 var MAZOS = {
@@ -65,13 +86,29 @@ var TARJETAS = {
   BORRADO: 12        // Borrado lógico
 };
 
+// Columnas de la hoja "Usuarios" (1-indexed)
+var USUARIOS = {
+  USUARIO: 1,          // username (minúsculas, clave única)
+  SALT: 2,             // Salt (hex) para PBKDF2
+  HASH: 3,             // PBKDF2-HMAC-SHA256 hex
+  ITERACIONES: 4,      // Iteraciones usadas al crear el hash
+  API_TOKEN_HASH: 5,   // SHA-256 del API token vigente ('' = ninguno)
+  BACKUP_CODES: 6,     // JSON array con el SHA-256 de cada backup code
+  TOTP_ACTIVO: 7,      // true si el usuario activó TOTP
+  INTENTOS: 8,         // Intentos fallidos consecutivos
+  BLOQUEO_HASTA: 9,    // Epoch ms hasta el que la cuenta está bloqueada
+  CREADO: 10           // Epoch ms de creación
+};
+
 // Encabezados usados para crear las hojas en el primer arranque
 var HEADERS = {
   MAZOS: ['Mazo_ID', 'Usuario_Email', 'Nombre', 'Icono', 'Color', 'Orden',
           'Creado', 'UpdatedAt', 'Borrado'],
   TARJETAS: ['ID', 'Mazo_ID', 'Usuario_Email', 'Icono', 'Pregunta', 'Respuesta',
              'Explicacion', 'Intervalo', 'Facilidad', 'ProximaRevision',
-             'UpdatedAt', 'Borrado']
+             'UpdatedAt', 'Borrado'],
+  USUARIOS: ['Usuario', 'Salt', 'Hash', 'Iteraciones', 'ApiTokenHash',
+             'BackupCodes', 'TotpActivo', 'Intentos', 'BloqueoHasta', 'Creado']
 };
 
 // ------------------------------------------------------------------
@@ -80,8 +117,9 @@ var HEADERS = {
 
 /**
  * GET:
- *  ?email=<email>&token=<idToken>  → pull completo del usuario (mazos + tarjetas)
- *  ?share_id=<mazoId>              → mazo público (solo lectura, sin auth)
+ *  ?email=<owner>&token=<token>  → pull completo (mazos + tarjetas).
+ *    token = ID token de Google o API token de cuenta MasterCards.
+ *  ?share_id=<mazoId>            → mazo público (solo lectura, sin auth).
  */
 function doGet(e) {
   try {
@@ -93,9 +131,9 @@ function doGet(e) {
     }
     // --- Pull del usuario (requiere token verificado) ---
     if (params.email && params.token) {
-      var email = verifyGoogleToken_(params.token);
+      var email = verifyAnyToken_(params.token);
       if (!email || email !== String(params.email).toLowerCase()) {
-        return jsonError('AUTH_FAILED', 'Token inválido o email no coincide');
+        return jsonError('AUTH_FAILED', 'Token inválido o usuario no coincide');
       }
       return jsonOk(getUserData_(email));
     }
@@ -107,16 +145,35 @@ function doGet(e) {
 
 /**
  * POST:
- *  Body (text/plain;charset=utf-8): { "token": "<idToken>", "syncOperations": [...] }
- *  Procesa las operaciones en lote (hasta MAX_OPS_PER_SYNC por request).
+ *  Body (text/plain;charset=utf-8), dos formatos:
+ *   - Auth de cuentas MC: { "action": "register|login|recover|totpSetup|changePassword|generateBackupCodes", ... }
+ *   - Sincronización:      { "token": "<token>", "syncOperations": [...] }
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(20000); // evita colisiones entre sincronizaciones
+  lock.waitLock(20000); // evita colisiones entre sincronizaciones y registros
   try {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+
+    // ---- Acciones públicas de cuentas MasterCards (sin token) ----
+    if (body.action === 'register') return handleRegister_(body);
+    if (body.action === 'login') return handleLogin_(body);
+    if (body.action === 'recover') return handleRecover_(body);
+
+    // ---- Acciones autenticadas (requieren token de sesión) ----
+    if (body.action) {
+      if (!body.token) return jsonError('AUTH_REQUIRED', 'Falta el token');
+      var owner = verifyAnyToken_(body.token);
+      if (!owner) return jsonError('AUTH_FAILED', 'Token inválido o expirado');
+      if (body.action === 'totpSetup') return handleTotpSetup_(owner, body);
+      if (body.action === 'changePassword') return handleChangePassword_(owner, body);
+      if (body.action === 'generateBackupCodes') return handleGenerateBackupCodes_(owner);
+      return jsonError('BAD_REQUEST', 'Acción desconocida: ' + body.action);
+    }
+
+    // ---- Sincronización (cola de operaciones offline) ----
     if (!body.token) return jsonError('AUTH_REQUIRED', 'Falta el token');
-    var email = verifyGoogleToken_(body.token);
+    var email = verifyAnyToken_(body.token);
     if (!email) return jsonError('AUTH_FAILED', 'Token inválido o expirado');
 
     ensureDataStore_();
@@ -125,18 +182,231 @@ function doPost(e) {
     var MAX_OPS = 100; // límite por request (evita timeouts de Apps Script)
     var accepted = ops.slice(0, MAX_OPS);
     var results = processOperations_(email, accepted);
-    var report = {
+    return jsonOk({
       email: email,
       processed: accepted.length,
       totalPending: ops.length,
       results: results
-    };
-    return jsonOk(report);
+    });
   } catch (err) {
     return jsonError('INTERNAL', String(err));
   } finally {
     lock.releaseLock();
   }
+}
+
+// ------------------------------------------------------------------
+// CUENTAS MASTERCARDS (registro, login, recuperación, TOTP)
+// ------------------------------------------------------------------
+
+function handleRegister_(body) {
+  ensureDataStore_();
+  var username = normalizeUsername_(body.username);
+  if (validarUsername_(username)) return jsonError('INVALID_USERNAME', 'Usuario inválido');
+  if (validarPassword_(body.password)) return jsonError('WEAK_PASSWORD', 'La contraseña no cumple la política');
+  if (findUserRow_(username) > 0) return jsonError('USERNAME_TAKEN', 'El usuario ya existe');
+
+  var salt = sha256Hex_(Utilities.getUuid() + '-' + Date.now()).slice(0, 32);
+  var iter = PBKDF2_ITERACIONES;
+  var backup = generarBackupCodes_();
+  var apiToken = genApiToken_();
+
+  getUsuarios_().appendRow([
+    username, salt, pbkdf2Hex_(body.password, salt, iter), iter,
+    sha256Hex_(apiToken), JSON.stringify(backup.hashes), false, 0, 0, Date.now()
+  ]);
+  return jsonOk({
+    username: username,
+    apiToken: apiToken,
+    backupCodes: backup.raw,
+    iteraciones: iter
+  });
+}
+
+function handleLogin_(body) {
+  ensureDataStore_();
+  var username = normalizeUsername_(body.username);
+  var rowInfo = findUserRowData_(username);
+  if (!rowInfo) return jsonError('AUTH_FAILED', 'Usuario o contraseña incorrectos');
+  var row = rowInfo.row, data = rowInfo.data;
+
+  var bloqueo = Number(data[USUARIOS.BLOQUEO_HASTA - 1]) || 0;
+  if (bloqueo > Date.now()) {
+    return jsonError('LOCKED', 'Demasiados intentos. Inténtalo más tarde.',
+      { bloqueoMs: bloqueo - Date.now() });
+  }
+
+  var hash = pbkdf2Hex_(body.password, String(data[USUARIOS.SALT - 1]),
+    Number(data[USUARIOS.ITERACIONES - 1]) || PBKDF2_ITERACIONES);
+  if (hash !== String(data[USUARIOS.HASH - 1])) {
+    if (registrarFallo_(row, data)) {
+      return jsonError('LOCKED', 'Demasiados intentos. Inténtalo más tarde.', { bloqueoMs: BLOQUEO_MS });
+    }
+    return jsonError('AUTH_FAILED', 'Usuario o contraseña incorrectos');
+  }
+
+  var totpActivo = !!data[USUARIOS.TOTP_ACTIVO - 1];
+  if (totpActivo && !body.totpCode) {
+    return jsonOk({ totpRequerido: true });
+  }
+  if (totpActivo && !verifyTotp_(username, body.totpCode, Date.now())) {
+    if (registrarFallo_(row, data)) {
+      return jsonError('LOCKED', 'Demasiados intentos. Inténtalo más tarde.', { bloqueoMs: BLOQUEO_MS });
+    }
+    return jsonError('TOTP_INVALID', 'Código de autenticación incorrecto');
+  }
+
+  var apiToken = rotarToken_(row);
+  resetIntentos_(row);
+  return jsonOk({ username: username, apiToken: apiToken, totpActivo: totpActivo });
+}
+
+/** Recuperación de cuenta: backup code o código TOTP + contraseña nueva. */
+function handleRecover_(body) {
+  ensureDataStore_();
+  var username = normalizeUsername_(body.username);
+  var rowInfo = findUserRowData_(username);
+  if (!rowInfo) return jsonError('AUTH_FAILED', 'Código de recuperación incorrecto');
+  var row = rowInfo.row, data = rowInfo.data;
+
+  var bloqueo = Number(data[USUARIOS.BLOQUEO_HASTA - 1]) || 0;
+  if (bloqueo > Date.now()) {
+    return jsonError('LOCKED', 'Demasiados intentos. Inténtalo más tarde.',
+      { bloqueoMs: bloqueo - Date.now() });
+  }
+
+  var valid = false;
+  if (body.method === 'backup') {
+    valid = consumirBackupCode_(row, data, body.code);
+  } else if (body.method === 'totp') {
+    valid = verifyTotp_(username, body.code, Date.now());
+  }
+  if (!valid) {
+    if (registrarFallo_(row, data)) {
+      return jsonError('LOCKED', 'Demasiados intentos. Inténtalo más tarde.', { bloqueoMs: BLOQUEO_MS });
+    }
+    return jsonError('AUTH_FAILED', 'Código de recuperación incorrecto');
+  }
+  if (validarPassword_(body.nuevo)) return jsonError('WEAK_PASSWORD', 'La contraseña no cumple la política');
+
+  var salt = sha256Hex_(Utilities.getUuid() + '-' + Date.now()).slice(0, 32);
+  var iter = PBKDF2_ITERACIONES;
+  var sheet = getUsuarios_();
+  sheet.getRange(row, USUARIOS.SALT).setValue(salt);
+  sheet.getRange(row, USUARIOS.HASH).setValue(pbkdf2Hex_(body.nuevo, salt, iter));
+  sheet.getRange(row, USUARIOS.ITERACIONES).setValue(iter);
+  sheet.getRange(row, USUARIOS.INTENTOS).setValue(0);
+  sheet.getRange(row, USUARIOS.BLOQUEO_HASTA).setValue(0);
+  // Tras recuperar, el TOTP anterior se rota (el código usado es sensible al tiempo)
+  sheet.getRange(row, USUARIOS.TOTP_ACTIVO).setValue(false);
+  PropertiesService.getScriptProperties().deleteProperty(totpPropKey_(username));
+
+  var apiToken = rotarToken_(row);
+  return jsonOk({ username: username, apiToken: apiToken });
+}
+
+/** Configura / activa / desactiva TOTP del usuario autenticado. */
+function handleTotpSetup_(owner, body) {
+  ensureDataStore_();
+  var row = findUserRow_(owner);
+  if (row <= 0) return jsonError('AUTH_FAILED', 'Usuario no encontrado');
+  var props = PropertiesService.getScriptProperties();
+  var propKey = totpPropKey_(owner);
+
+  if (body.disable) {
+    props.deleteProperty(propKey);
+    getUsuarios_().getRange(row, USUARIOS.TOTP_ACTIVO).setValue(false);
+    return jsonOk({ activo: false });
+  }
+
+  var secret = props.getProperty(propKey);
+  if (!secret) {
+    secret = genTotpSecret_();
+    props.setProperty(propKey, secret);
+  }
+  if (!body.totpCode) {
+    return jsonOk({ pending: true, secret: secret, otpauth: otpauthUri_(owner, secret) });
+  }
+  if (!verifyTotp_(owner, body.totpCode, Date.now())) {
+    return jsonError('TOTP_INVALID', 'Código de autenticación incorrecto');
+  }
+  getUsuarios_().getRange(row, USUARIOS.TOTP_ACTIVO).setValue(true);
+  return jsonOk({ activo: true });
+}
+
+/** Cambio de contraseña estando logueado (rota el API token). */
+function handleChangePassword_(owner, body) {
+  ensureDataStore_();
+  var rowInfo = findUserRowData_(owner);
+  if (!rowInfo) return jsonError('AUTH_FAILED', 'Usuario no encontrado');
+  var row = rowInfo.row, data = rowInfo.data;
+
+  var hash = pbkdf2Hex_(body.actual, String(data[USUARIOS.SALT - 1]),
+    Number(data[USUARIOS.ITERACIONES - 1]) || PBKDF2_ITERACIONES);
+  if (hash !== String(data[USUARIOS.HASH - 1])) {
+    return jsonError('AUTH_FAILED', 'Contraseña actual incorrecta');
+  }
+  if (validarPassword_(body.nuevo)) return jsonError('WEAK_PASSWORD', 'La contraseña no cumple la política');
+
+  var salt = sha256Hex_(Utilities.getUuid() + '-' + Date.now()).slice(0, 32);
+  var iter = PBKDF2_ITERACIONES;
+  var sheet = getUsuarios_();
+  sheet.getRange(row, USUARIOS.SALT).setValue(salt);
+  sheet.getRange(row, USUARIOS.HASH).setValue(pbkdf2Hex_(body.nuevo, salt, iter));
+  sheet.getRange(row, USUARIOS.ITERACIONES).setValue(iter);
+
+  var apiToken = rotarToken_(row);
+  return jsonOk({ apiToken: apiToken });
+}
+
+/** Regenera los backup codes (invalida los anteriores). */
+function handleGenerateBackupCodes_(owner) {
+  ensureDataStore_();
+  var row = findUserRow_(owner);
+  if (row <= 0) return jsonError('AUTH_FAILED', 'Usuario no encontrado');
+  var backup = generarBackupCodes_();
+  getUsuarios_().getRange(row, USUARIOS.BACKUP_CODES).setValue(JSON.stringify(backup.hashes));
+  return jsonOk({ backupCodes: backup.raw });
+}
+
+/** Registra un intento fallido; si llega al límite, bloquea la cuenta. */
+function registrarFallo_(row, data) {
+  var sheet = getUsuarios_();
+  var intentos = (Number(data[USUARIOS.INTENTOS - 1]) || 0) + 1;
+  if (intentos >= MAX_INTENTOS) {
+    sheet.getRange(row, USUARIOS.BLOQUEO_HASTA).setValue(Date.now() + BLOQUEO_MS);
+    sheet.getRange(row, USUARIOS.INTENTOS).setValue(0);
+    return true; // quedó bloqueada
+  }
+  sheet.getRange(row, USUARIOS.INTENTOS).setValue(intentos);
+  return false;
+}
+
+function resetIntentos_(row) {
+  var sheet = getUsuarios_();
+  sheet.getRange(row, USUARIOS.INTENTOS).setValue(0);
+  sheet.getRange(row, USUARIOS.BLOQUEO_HASTA).setValue(0);
+}
+
+/** Genera un nuevo API token, guarda su SHA-256 y devuelve el token crudo. */
+function rotarToken_(row) {
+  var apiToken = genApiToken_();
+  getUsuarios_().getRange(row, USUARIOS.API_TOKEN_HASH).setValue(sha256Hex_(apiToken));
+  return apiToken;
+}
+
+/** Verifica un backup code y, si acierta, lo consume (un solo uso). */
+function consumirBackupCode_(row, data, code) {
+  if (!code) return false;
+  var hashes = [];
+  try { hashes = JSON.parse(String(data[USUARIOS.BACKUP_CODES - 1] || '[]')); } catch (err) { hashes = []; }
+  if (!hashes.length) return false;
+  var target = sha256Hex_(normalizarBackupCode_(code));
+  var idx = hashes.indexOf(target);
+  if (idx < 0) return false;
+  hashes.splice(idx, 1);
+  getUsuarios_().getRange(row, USUARIOS.BACKUP_CODES).setValue(JSON.stringify(hashes));
+  return true;
 }
 
 // ------------------------------------------------------------------
@@ -413,6 +683,21 @@ function rowToDeck_(r) {
 // ------------------------------------------------------------------
 
 /**
+ * Verifica cualquier token de sesión y devuelve el dueño (minúsculas):
+ *  - JWT (3 segmentos) → Google ID token → email verificado.
+ *  - Hex (API token MC) → SHA-256 → username de la hoja Usuarios.
+ * @return {String|null} dueño o null si el token no es válido.
+ */
+function verifyAnyToken_(token) {
+  if (!token) return null;
+  if (esJwt_(token)) {
+    var email = verifyGoogleToken_(token);
+    return email ? String(email).toLowerCase() : null;
+  }
+  return findUserByTokenHash_(sha256Hex_(String(token)));
+}
+
+/**
  * Verifica un ID token OIDC de Google y devuelve el email verificado.
  * Llama a tokeninfo (endpoint público, sin API key) y comprueba `aud`.
  * @return {String|null} email o null si el token no es válido.
@@ -432,11 +717,267 @@ function verifyGoogleToken_(idToken) {
   return String(info.email || '').toLowerCase();
 }
 
+/** ¿Tiene forma de JWT (3 segmentos separados por puntos)? */
+function esJwt_(token) {
+  if (typeof token !== 'string') return false;
+  return token.indexOf('.') > 0 && token.split('.').length === 3;
+}
+
+// ------------------------------------------------------------------
+// CRIPTOGRAFÍA (PBKDF2, SHA-256, HMAC-SHA1, TOTP RFC 6238)
+// ------------------------------------------------------------------
+
+/** Convierte un Byte[] de computeDigest (posiblemente con signo) a hex. */
+function hexBytes_(bytes) {
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) {
+    var b = bytes[i] & 0xff;
+    hex += (b < 16 ? '0' : '') + b.toString(16);
+  }
+  return hex;
+}
+
+function sha256Hex_(str) {
+  return hexBytes_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(str)));
+}
+
+/** Digest SHA-256 sobre bytes. Devuelve Byte[] (con signo). */
+function sha256Bytes_(bytes) {
+  var normalized = [];
+  for (var i = 0; i < bytes.length; i++) normalized.push(bytes[i] & 0xff);
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, normalized);
+}
+
+/** HMAC-SHA256 sobre arrays de bytes (RFC 2104). Devuelve Byte[] (32 bytes). */
+function hmacSha256_(keyBytes, msgBytes) {
+  var BLOCK = 64;
+  var key = [];
+  for (var i = 0; i < keyBytes.length; i++) key.push(keyBytes[i] & 0xff);
+  if (key.length > BLOCK) key = sha256Bytes_(key);
+  while (key.length < BLOCK) key.push(0);
+  var ipad = [], opad = [];
+  for (var j = 0; j < BLOCK; j++) {
+    ipad.push((key[j] & 0xff) ^ 0x36);
+    opad.push((key[j] & 0xff) ^ 0x5c);
+  }
+  var inner = sha256Bytes_(ipad.concat(msgBytes));
+  return sha256Bytes_(opad.concat(inner));
+}
+
+/**
+ * PBKDF2-HMAC-SHA256 (RFC 2898), dkLen = 32 bytes = hLen (un solo bloque).
+ * Salt como string (ASCII/UTF-8). Construido a mano porque Apps Script no
+ * expone PBKDF2 en Utilities.computeDigest.
+ */
+function pbkdf2Hex_(password, salt, iteraciones) {
+  var passStr = String(password), passBytes = [];
+  for (var i = 0; i < passStr.length; i++) passBytes.push(passStr.charCodeAt(i) & 0xff);
+  var saltStr = String(salt), saltBytes = [];
+  for (var j = 0; j < saltStr.length; j++) saltBytes.push(saltStr.charCodeAt(j) & 0xff);
+
+  // U1 = HMAC(password, salt || INT(1))  (4 bytes big-endian)
+  var u = hmacSha256_(passBytes, saltBytes.concat([0, 0, 0, 1]));
+  var t = u.slice(); // acumulador XOR (32 bytes)
+  for (var iter = 1; iter < iteraciones; iter++) {
+    u = hmacSha256_(passBytes, u);
+    for (var k = 0; k < t.length; k++) t[k] = ((t[k] & 0xff) ^ (u[k] & 0xff)) & 0xff;
+  }
+  return hexBytes_(t);
+}
+
+// --- Base32 (RFC 4648) para secretos TOTP ---
+var BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+function bytesToBase32_(bytes) {
+  var out = '';
+  var bits = 0, value = 0;
+  for (var i = 0; i < bytes.length; i++) {
+    value = (value << 8) | (bytes[i] & 0xff);
+    bits += 8;
+    while (bits >= 5) {
+      out += BASE32_ALPHABET[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) out += BASE32_ALPHABET[(value << (5 - bits)) & 31];
+  while (out.length % 8) out += '=';
+  return out;
+}
+
+function base32ToBytes_(s) {
+  s = String(s).toUpperCase().replace(/=+$/, '').replace(/\s+/g, '');
+  var out = [];
+  var bits = 0, value = 0;
+  for (var i = 0; i < s.length; i++) {
+    var idx = BASE32_ALPHABET.indexOf(s[i]);
+    if (idx < 0) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  return out;
+}
+
+/** Secreto TOTP aleatorio (20 bytes → 32 chars base32). */
+function genTotpSecret_() {
+  var src = sha256Hex_(Utilities.getUuid() + '-' + Date.now());
+  var bytes = [];
+  for (var i = 0; i < 40; i += 2) bytes.push(parseInt(src.substr(i, 2), 16));
+  return bytesToBase32_(bytes);
+}
+
+function totpPropKey_(username) {
+  return 'TOTP:' + username;
+}
+
+/** Digest SHA-1 sobre bytes (normaliza signo). Devuelve Byte[] (con signo). */
+function digestBytesSha1_(bytes) {
+  var normalized = [];
+  for (var i = 0; i < bytes.length; i++) normalized.push(bytes[i] & 0xff);
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_1, normalized);
+}
+
+/** HMAC-SHA1 sobre arrays de bytes (RFC 2104). Devuelve Byte[] (20 bytes). */
+function hmacSha1_(keyBytes, msgBytes) {
+  var BLOCK = 64;
+  var key = [];
+  for (var i = 0; i < keyBytes.length; i++) key.push(keyBytes[i] & 0xff);
+  if (key.length > BLOCK) key = digestBytesSha1_(key);
+  while (key.length < BLOCK) key.push(0);
+  var ipad = [], opad = [];
+  for (var j = 0; j < BLOCK; j++) {
+    ipad.push((key[j] & 0xff) ^ 0x36);
+    opad.push((key[j] & 0xff) ^ 0x5c);
+  }
+  var inner = digestBytesSha1_(ipad.concat(msgBytes));
+  return digestBytesSha1_(opad.concat(inner));
+}
+
+/** Código TOTP de 6 dígitos para un instante (epoch ms), RFC 6238 (SHA-1). */
+function totpCode_(secret, timeMs) {
+  var key = base32ToBytes_(secret);
+  var counter = Math.floor(timeMs / 30000);
+  var msg = [];
+  for (var i = 7; i >= 0; i--) {
+    msg.push(Math.floor(counter / Math.pow(2, i * 8)) & 0xff);
+  }
+  var hash = hmacSha1_(key, msg);
+  var offset = hash[19] & 0x0f;
+  var bin = ((hash[offset] & 0x7f) << 24) |
+            ((hash[offset + 1] & 0xff) << 16) |
+            ((hash[offset + 2] & 0xff) << 8) |
+            (hash[offset + 3] & 0xff);
+  var code = (bin % 1000000).toString();
+  while (code.length < 6) code = '0' + code;
+  return code;
+}
+
+/** Verifica un código TOTP contra el secreto del usuario (ventana ±1). */
+function verifyTotp_(username, code, nowMs) {
+  if (!code) return false;
+  var secret = PropertiesService.getScriptProperties().getProperty(totpPropKey_(username));
+  if (!secret) return false;
+  var input = String(code).replace(/\s+/g, '');
+  for (var w = -1; w <= 1; w++) {
+    if (totpCode_(secret, nowMs + w * 30000) === input) return true;
+  }
+  return false;
+}
+
+/** URI otpauth para generar el QR en el frontend. */
+function otpauthUri_(username, secret) {
+  return 'otpauth://totp/MasterCards%20(' + encodeURIComponent(username) + ')?secret=' +
+         secret + '&issuer=' + encodeURIComponent('MasterCards');
+}
+
+// ------------------------------------------------------------------
+// HELPERS DE CUENTAS MASTERCARDS
+// ------------------------------------------------------------------
+
+/** API token opaco (64 hex) con buena entropía. */
+function genApiToken_() {
+  return sha256Hex_(Utilities.getUuid() + '-' + Date.now() + '-' + Math.random());
+}
+
+function normalizeUsername_(u) {
+  return String(u || '').trim().toLowerCase();
+}
+
+/** Devuelve null si el username es válido, o 'INVALID_USERNAME'. */
+function validarUsername_(u) {
+  if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(u)) return 'INVALID_USERNAME';
+  if (u.indexOf('@') !== -1) return 'INVALID_USERNAME';
+  return null;
+}
+
+/** Devuelve null si la contraseña cumple la política, o 'WEAK_PASSWORD'. */
+function validarPassword_(pw) {
+  if (typeof pw !== 'string' || pw.length < 8 || pw.length > 128) return 'WEAK_PASSWORD';
+  if (!/[A-Z]/.test(pw)) return 'WEAK_PASSWORD';
+  if (!/[a-z]/.test(pw)) return 'WEAK_PASSWORD';
+  if (!/[0-9]/.test(pw)) return 'WEAK_PASSWORD';
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'WEAK_PASSWORD';
+  return null;
+}
+
+// Alfabeto de backup codes sin caracteres ambiguos (0/O/1/I/L)
+var BACKUP_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+function normalizarBackupCode_(code) {
+  return String(code).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** Genera 10 backup codes y devuelve { raw: [...], hashes: [...] }. */
+function generarBackupCodes_() {
+  var raw = [], hashes = [];
+  for (var i = 0; i < 10; i++) {
+    var src = sha256Hex_(Utilities.getUuid() + '-' + Date.now() + '-' + Math.random());
+    var code = '';
+    for (var j = 0; j < 10; j++) {
+      code += BACKUP_ALPHABET[parseInt(src.substr((j * 2) % 56, 2), 16) % BACKUP_ALPHABET.length];
+    }
+    raw.push(code.slice(0, 5) + '-' + code.slice(5));
+    hashes.push(sha256Hex_(code));
+  }
+  return { raw: raw, hashes: hashes };
+}
+
+function findUserRow_(username) {
+  var data = getUsuarios_().getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][USUARIOS.USUARIO - 1]) === username) return i + 1;
+  }
+  return 0;
+}
+
+function findUserRowData_(username) {
+  var data = getUsuarios_().getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][USUARIOS.USUARIO - 1]) === username) {
+      return { row: i + 1, data: data[i] };
+    }
+  }
+  return null;
+}
+
+function findUserByTokenHash_(hash) {
+  var data = getUsuarios_().getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][USUARIOS.API_TOKEN_HASH - 1]) === hash) {
+      return String(data[i][USUARIOS.USUARIO - 1]);
+    }
+  }
+  return null;
+}
+
 // ------------------------------------------------------------------
 // INFRAESTRUCTURA (hoja de cálculo)
 // ------------------------------------------------------------------
 
-/** Garantiza que exista la hoja de cálculo y las dos hojas con encabezados. */
+/** Garantiza que exista la hoja de cálculo y las tres hojas con encabezados. */
 function ensureDataStore_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty(SS_PROP_KEY);
@@ -450,6 +991,7 @@ function ensureDataStore_() {
   }
   ensureSheet_(ss, 'Mazos', HEADERS.MAZOS);
   ensureSheet_(ss, 'Tarjetas', HEADERS.TARJETAS);
+  ensureSheet_(ss, 'Usuarios', HEADERS.USUARIOS);
 }
 
 function ensureSheet_(ss, name, headers) {
@@ -472,12 +1014,17 @@ function getTarjetas_() {
   if (!id) ensureDataStore_();
   return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Tarjetas');
 }
+function getUsuarios_() {
+  // Se asegura SIEMPRE la creación de la hoja (puede ser una BD antigua sin ella).
+  ensureDataStore_();
+  return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getSheetByName('Usuarios');
+}
 
 // ------------------------------------------------------------------
 // HELPERS
 // ------------------------------------------------------------------
 
-/** Busca la fila (1-indexed, 0 si no existe) de un valor en la columna A. */
+/** Busca la fila (1-indexed, 0 si no existe) de un valor en una columna. */
 function findRow_(data, colIdx, valor, email) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][colIdx - 1]) === String(valor)) {
@@ -504,9 +1051,13 @@ function jsonOk(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function jsonError(code, message) {
+function jsonError(code, message, extra) {
+  var payload = { ok: false, error: code, message: message };
+  if (extra) {
+    for (var k in extra) payload[k] = extra[k];
+  }
   return ContentService
-    .createTextOutput(JSON.stringify({ ok: false, error: code, message: message }))
+    .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -519,4 +1070,29 @@ function setup() {
   ensureDataStore_();
   Logger.log('Base de datos lista: ' +
     SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getUrl());
+}
+
+/**
+ * RED DE SEGURIDAD (solo el dueño, desde el editor de Apps Script):
+ * Restablece la contraseña de una cuenta MasterCards si el usuario la
+ * perdió y no tiene backup codes ni TOTP. Rota el API token (las demás
+ * sesiones se invalidan). Ejecutar con: adminResetPassword('usuario', 'Nueva#Pass1')
+ */
+function adminResetPassword(username, nueva) {
+  ensureDataStore_();
+  var u = normalizeUsername_(username);
+  if (validarPassword_(nueva)) throw new Error('La contraseña no cumple la política');
+  var row = findUserRow_(u);
+  if (row <= 0) throw new Error('Usuario no encontrado: ' + u);
+  var salt = sha256Hex_(Utilities.getUuid() + '-' + Date.now()).slice(0, 32);
+  var iter = PBKDF2_ITERACIONES;
+  var sheet = getUsuarios_();
+  sheet.getRange(row, USUARIOS.SALT).setValue(salt);
+  sheet.getRange(row, USUARIOS.HASH).setValue(pbkdf2Hex_(nueva, salt, iter));
+  sheet.getRange(row, USUARIOS.ITERACIONES).setValue(iter);
+  sheet.getRange(row, USUARIOS.INTENTOS).setValue(0);
+  sheet.getRange(row, USUARIOS.BLOQUEO_HASTA).setValue(0);
+  var apiToken = rotarToken_(row);
+  Logger.log('Contraseña restablecida para ' + u + ' (API token rotado).');
+  return apiToken;
 }

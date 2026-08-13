@@ -11,6 +11,9 @@ JS, con **Google Apps Script + Google Sheets** como backend.
 - **Font Awesome auto-hospedado** (funciona 100% offline), sin emojis en la UI.
 - Dark mode nativo + animaciones configurables (sutil/híbrido/vistoso).
 - **Bilingüe ES/EN** (selector en Ajustes) e **instalable** (PWA con banner).
+- **Dos formas de entrar**: con Google o creando una **cuenta MasterCards**
+  (usuario + contraseña) con **verificación en dos pasos (TOTP)** opcional y
+  **códigos de recuperación** de respaldo.
 
 ## ⚙️ Arquitectura
 
@@ -25,8 +28,9 @@ JS, con **Google Apps Script + Google Sheets** como backend.
 - **Frontend**: `index.html`, `style.css`, `app.js`, `manifest.json`, `sw.js`.
 - **Backend**: `backend.gs` (Web App de Apps Script; deploy "Execute as: Me" + "Anyone").
 - **Datos locales**: `localStorage` (`mc_*`). **Cola offline**: `mc_syncQueue`.
-- **Auth**: Google Identity Services (flujo redirect). El backend verifica el ID
-  token contra `oauth2.googleapis.com/tokeninfo`.
+- **Auth**: Google Identity Services (flujo redirect) o cuentas MasterCards
+  (PBKDF2 + TOTP). El backend distingue ambos tokens en el mismo pull/flush
+  (`verifyAnyToken_`).
 
 ## 🚀 Despliegue
 
@@ -68,16 +72,18 @@ Nota: el Service Worker y el login de Google requieren HTTPS o `localhost`.
 
 ## ✅ Tests
 
-- **Lógica pura (SM-2, markdown, fechas, i18n)** sin navegador:
+- **Lógica pura (SM-2, markdown, fechas, i18n, política de contraseña, TOTP,
+  PBKDF2)** sin navegador:
 
   ```powershell
   node scripts/test.js
   ```
 
   Extrae las funciones reales de `app.js` y verifica que las claves ES/EN de los
-  diccionarios y todos los `data-i18n` del HTML existen en ambos idiomas.
-- **Contrato del backend desplegado** (solo lecturas con tokens inválidos, no
-  toca datos):
+  diccionarios y todos los `data-i18n` del HTML existen en ambos idiomas; el TOTP
+  se valida contra los vectores del RFC 6238.
+- **Contrato del backend desplegado** (solo lecturas y auth con credenciales
+  inválidas, no toca datos):
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1

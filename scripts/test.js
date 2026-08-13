@@ -16,6 +16,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
+const crypto = require('crypto');
 
 const APP = path.join(__dirname, '..', 'app.js');
 const INDEX = path.join(__dirname, '..', 'index.html');
@@ -44,15 +45,18 @@ function extractFn(name) {
   return extractBlock('function ' + name + '\\b[^{]*\\{', src);
 }
 
-const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't'];
+const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC'];
 const CONFIG_BLOCK = /var CONFIG = \{[\s\S]*?\n\};/.exec(src)[0];
 const I18N_BLOCK = extractBlock('var I18N = \\{', src);
+// Regex de las cuentas MC (declaradas como var en app.js)
+const USERNAME_RE_BLOCK = /var USERNAME_RE = \S+;/.exec(src)[0];
+const TOTP_RE_BLOCK = /var TOTP_RE = \S+;/.exec(src)[0];
 
 const ctx = { window: { crypto: undefined }, Math, Date, String, console, Object };
 vm.createContext(ctx);
-vm.runInContext(CONFIG_BLOCK + '\n' + I18N_BLOCK + '\n' + FUNCS.map(extractFn).join('\n'), ctx);
+vm.runInContext(CONFIG_BLOCK + '\n' + I18N_BLOCK + '\n' + USERNAME_RE_BLOCK + '\n' + TOTP_RE_BLOCK + '\n' + FUNCS.map(extractFn).join('\n'), ctx);
 
-const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t } = ctx;
+const { sm2, md, esc, uuid, todayKey, esNueva, estaVencida, fmtShort, t, validarPasswordMC, USERNAME_RE, TOTP_RE } = ctx;
 const I18N = ctx.I18N;
 
 let pass = 0, fail = 0;
@@ -120,6 +124,88 @@ const uniq = Array.from(new Set(htmlKeys));
 const missingHtml = uniq.filter(k => keysEs.indexOf(k) === -1 || keysEn.indexOf(k) === -1);
 ok('HTML: ' + uniq.length + ' claves data-i18n, todas existen en es/en' +
    (missingHtml.length ? ' (faltan: ' + missingHtml.join(',') + ')' : ''), missingHtml.length === 0);
+
+console.log('▶ Cuentas MC (política, desde app.js)');
+ok('pw rechaza corta', validarPasswordMC('Ab1!').ok === false);
+ok('pw rechaza sin símbolo', validarPasswordMC('Abcdefg8').ok === false);
+ok('pw rechaza sin mayúscula', validarPasswordMC('abcdefg8!').ok === false);
+ok('pw rechaza sin número', validarPasswordMC('Abcdefgh!').ok === false);
+ok('pw rechaza >128', validarPasswordMC('P@ssw0rd!' + 'a'.repeat(200)).ok === false);
+ok('pw acepta fuerte', validarPasswordMC('P@ssw0rd!').ok === true);
+ok('fails marca requisito símbolo', validarPasswordMC('Abcdefg8').fails.indexOf('pw_req_special') !== -1);
+ok('USERNAME_RE válido', USERNAME_RE.test('mi_usuario') === true);
+ok('USERNAME_RE rechaza @', USERNAME_RE.test('mal@usuario') === false);
+ok('USERNAME_RE rechaza corto', USERNAME_RE.test('ab') === false);
+ok('USERNAME_RE rechaza mayúsculas', USERNAME_RE.test('Usuario1') === false);
+ok('TOTP_RE 6 dígitos', TOTP_RE.test('123456') === true);
+ok('TOTP_RE rechaza 5', TOTP_RE.test('12345') === false);
+
+console.log('▶ TOTP / PBKDF2 (referencia de backend.gs)');
+function refBase32(bytes) {
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let out = '', bits = 0, value = 0;
+  for (const b of bytes) {
+    value = (value << 8) | (b & 0xff); bits += 8;
+    while (bits >= 5) { out += ALPHA[(value >>> (bits - 5)) & 31]; bits -= 5; }
+  }
+  if (bits > 0) out += ALPHA[(value << (5 - bits)) & 31];
+  while (out.length % 8) out += '=';
+  return out;
+}
+function refBase32Decode(s) {
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  s = s.toUpperCase().replace(/=+$/, '').replace(/\s+/g, '');
+  const out = []; let bits = 0, value = 0;
+  for (const ch of s) {
+    const idx = ALPHA.indexOf(ch);
+    if (idx < 0) continue;
+    value = (value << 5) | idx; bits += 5;
+    if (bits >= 8) { out.push((value >>> (bits - 8)) & 0xff); bits -= 8; }
+  }
+  return out;
+}
+function refHmacSha1(keyBytes, msgBytes) {
+  const BLOCK = 64;
+  let key = keyBytes.map(b => b & 0xff);
+  const digest = bytes => Array.from(crypto.createHash('sha1').update(Buffer.from(bytes.map(b => b & 0xff))).digest());
+  if (key.length > BLOCK) key = digest(key);
+  while (key.length < BLOCK) key.push(0);
+  const ipad = [], opad = [];
+  for (let j = 0; j < BLOCK; j++) { ipad.push((key[j] & 0xff) ^ 0x36); opad.push((key[j] & 0xff) ^ 0x5c); }
+  return digest(opad.concat(digest(ipad.concat(msgBytes))));
+}
+function refTotp(secret, timeSec) {
+  const key = refBase32Decode(secret);
+  const counter = Math.floor(timeSec / 30);
+  const msg = [];
+  for (let i = 7; i >= 0; i--) msg.push(Math.floor(counter / Math.pow(2, i * 8)) & 0xff);
+  const hash = refHmacSha1(key, msg);
+  const offset = hash[19] & 0x0f;
+  const bin = ((hash[offset] & 0x7f) << 24) | ((hash[offset + 1] & 0xff) << 16) |
+              ((hash[offset + 2] & 0xff) << 8) | (hash[offset + 3] & 0xff);
+  let code = (bin % 1000000).toString();
+  while (code.length < 6) code = '0' + code;
+  return code;
+}
+const secB32 = refBase32(Array.from(Buffer.from('12345678901234567890')));
+ok('base32 RFC 4648', secB32 === 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ');
+const rfcVectors = [
+  [59, '287082'],
+  [1111111109, '081804'],
+  [1111111111, '050471'],
+  [1234567890, '005924'],
+  [2000000000, '279037'],
+  [20000000000, '353130']
+];
+let totpOk = true;
+for (const [tv, exp] of rfcVectors) if (refTotp(secB32, tv) !== exp) { totpOk = false; console.log('    TOTP T=' + tv + ' → ' + refTotp(secB32, tv) + ' (esperado ' + exp + ')'); }
+ok('TOTP RFC 6238 SHA-1 (6 dígitos)', totpOk);
+const p1 = crypto.pbkdf2Sync('password', 'salt', 1, 32, 'sha256').toString('hex');
+const p2 = crypto.pbkdf2Sync('password', 'salt', 2, 32, 'sha256').toString('hex');
+const p4096 = crypto.pbkdf2Sync('password', 'salt', 4096, 32, 'sha256').toString('hex');
+ok('PBKDF2 c=1 vector', p1 === '120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b');
+ok('PBKDF2 c=2 vector', p2 === 'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43');
+ok('PBKDF2 c=4096 vector', p4096 === 'c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a');
 
 console.log('──────────────────────────────');
 console.log('PASS=' + pass + '  FAIL=' + fail);

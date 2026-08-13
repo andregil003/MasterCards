@@ -38,13 +38,37 @@ Script Properties bajo la clave `SPREADSHEET_ID`).
 | K | UpdatedAt | number | epoch ms. Para LWW. |
 | L | Borrado | boolean | Soft-delete. |
 
+### Hoja `Usuarios` (cuentas MasterCards)
+
+Creada automáticamente por `backend.gs`. Una fila por cuenta MC. La columna
+`Usuario` es el `owner` que se usa como dueño de mazos/tarjetas.
+
+| Col | Nombre | Tipo | Notas |
+|-----|--------|------|-------|
+| A | Usuario | string | username en minúsculas (sin `@`). Clave natural. |
+| B | Salt | string | 32 hex únicos por usuario. |
+| C | Hash | string | PBKDF2-HMAC-SHA256(password, salt, iteraciones), 64 hex. |
+| D | Iteraciones | number | Guardadas por fila (permite subir coste a futuro). |
+| E | TokenHash | string | SHA-256 del API token vigente (el token crudo solo vive en el cliente). |
+| F | BackupCodes | string | JSON con los SHA-256 de los backup codes (nunca los códigos en claro). |
+| G | TotpActivo | boolean | TOTP opcional habilitado. |
+| H | Intentos | number | Fallos consecutivos de login/recover (para lockout). |
+| I | BloqueoHasta | number | epoch ms hasta el que la cuenta queda bloqueada. 0 = sin bloqueo. |
+| J | Creado | number | epoch ms. |
+
+**Secreto TOTP**: se guarda en **Script Properties** (clave `TOTP:<usuario>`),
+NUNCA en la hoja. Al recuperar la cuenta se rota (se borra el secreto y
+`TotpActivo=false`).
+
 ## 2.2 Estado local (localStorage)
 
 Claves (prefijo `mc_`):
 
 | Clave | Contenido |
 |-------|-----------|
-| `mc_email` | Email del usuario logueado. |
+| `mc_email` | Email del usuario logueado con Google. |
+| `mc_username` | Username de la cuenta MasterCards logueada. |
+| `mc_apitoken` | API token de la cuenta MasterCards (64 hex). Nunca se sube al repo. |
 | `mc_decks` | Array de mazos (`{mazoId,nombre,icono,color,orden,creado,updatedAt,borrado}`). |
 | `mc_cards` | Array de tarjetas (`{id,mazoId,icono,pregunta,respuesta,explicacion,intervalo,facilidad,proximaRevision,updatedAt,borrado}`). |
 | `mc_syncQueue` | Array de operaciones pendientes (`{opId,tipo,createdAt,data}`). |

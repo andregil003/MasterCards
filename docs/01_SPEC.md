@@ -97,3 +97,29 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
 - 2026-08-12: Tests automatizados: `scripts/test.js` (lógica pura extraída del
   propio `app.js`, incluye paridad de claves i18n y cobertura `data-i18n` del
   HTML) y `scripts/smoke-test.ps1` (contrato de la Web App desplegada).
+- 2026-08-12: Segundo método de login: cuenta MasterCards (usuario+contraseña)
+  con hash PBKDF2-HMAC-SHA256 (10.000 iteraciones, salt por fila), política
+  estricta de contraseña (8–128, mayúscula, minúscula, dígito, símbolo) y
+  bloqueo temporal anti fuerza bruta (5 fallos → 15 min).
+- 2026-08-12: Recuperación de cuenta SIN email: 10 backup codes (solo se
+  guardan como SHA-256 en la hoja; consumo de un solo uso) + TOTP opcional
+  (RFC 6238, HMAC-SHA1, 6 dígitos; secreto en Script Properties, NUNCA en la
+  hoja) + `adminResetPassword` del dueño como red de seguridad.
+- 2026-08-12: `verifyAnyToken_` unifica auth: el mismo pull/flush acepta ID
+  tokens de Google (JWT de 3 segmentos) y API tokens de cuentas MC (64 hex,
+  guardados como SHA-256). Los tokens MC se rotan en cada login/cambio de
+  contraseña/recuperación.
+- 2026-08-12: QR del TOTP vía `api.qrserver.com` (gratis) con entrada manual
+  del secreto como fallback offline-first.
+- 2026-08-12: Tests ampliados: `scripts/test.js` (47 asserts: política de
+  contraseña, username, TOTP contra vectores RFC 6238, PBKDF2 con vectores de
+  referencia) y `scripts/smoke-test.ps1` (caminos negativos de auth, sin crear
+  cuentas reales).
+- 2026-08-12: `Utilities.computeDigest` NO expone PBKDF2 (solo MD2/MD5/SHA-1/256/
+  384/512). PBKDF2-HMAC-SHA256 se implementa a mano (RFC 2898, dkLen=32) sobre
+  HMAC-SHA256 construido con `computeDigest(SHA_256)`. Verificado contra
+  `crypto.pbkdf2Sync` (vectores c=1/2/4096) y con la prueba e2e desplegada.
+- 2026-08-12: `scripts/e2e-auth.js`: prueba de extremo a extremo del flujo de
+  cuentas MC contra el backend desplegado (register → login → TOTP →
+  changePassword → backup codes → recover). Crea un usuario real de prueba
+  `e2e_<rand>` en la hoja Usuarios (borrarlo tras la validación).

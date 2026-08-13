@@ -46,6 +46,8 @@ var CONFIG = {
 // Claves de localStorage
 var K = {
   EMAIL: 'mc_email',
+  MC_USERNAME: 'mc_username',
+  MC_TOKEN: 'mc_apitoken',
   DECKS: 'mc_decks',
   CARDS: 'mc_cards',
   QUEUE: 'mc_syncQueue',
@@ -210,7 +212,72 @@ var I18N = {
       prompt_intro: 'Actúa como un experto creando tarjetas flash. Crea un mazo sobre el tema "{a}" con tarjetas pregunta/respuesta claras y concisas.',
       prompt_rule1: 'Genera EXACTAMENTE este formato JSON, sin texto adicional:',
       prompt_rule2: 'Usa "q" para la pregunta, "a" para la respuesta y "e" (opcional) para una breve explicación de por qué es correcta.',
-      prompt_rule3: 'Entre 10 y 30 tarjetas, en español.'
+      prompt_rule3: 'Entre 10 y 30 tarjetas, en español.',
+      // Cuentas MasterCards (usuario + contraseña)
+      or: 'o',
+      username: 'Usuario',
+      username_ph: 'mi_usuario',
+      username_hint: '3–30 caracteres: letras, números, . _ -',
+      password: 'Contraseña',
+      repeat_password: 'Repetir contraseña',
+      login_btn: 'Iniciar sesión',
+      create_account: 'Crear cuenta',
+      forgot_password: '¿Olvidaste tu contraseña?',
+      goto_login: 'Ya tengo cuenta',
+      register_btn: 'Registrarme',
+      continue: 'Continuar',
+      backup_codes_title: 'Códigos de recuperación',
+      backup_codes_hint: 'Guárdalos en un lugar seguro. Cada uno se usa UNA sola vez.',
+      backup_codes_confirm: 'He guardado mis códigos',
+      backup_codes_copy: 'Copiar',
+      backup_codes_download: 'Descargar',
+      recover_title: 'Recuperar cuenta',
+      recover_method: 'Método de recuperación',
+      recover_method_backup: 'Código de respaldo',
+      recover_method_totp: 'App autenticadora',
+      recover_code: 'Código',
+      recover_code_ph: 'XXXXX-XXXXX o 6 dígitos',
+      new_password: 'Contraseña nueva',
+      recover_btn: 'Recuperar',
+      totp_title: 'Verificación en dos pasos (opcional)',
+      totp_title_login: 'Verificación en dos pasos',
+      totp_hint: 'Escanea el QR con una app autenticadora (Google Authenticator, Authy…).',
+      totp_login_hint: 'Introduce el código de 6 dígitos de tu app autenticadora.',
+      totp_manual_hint: 'O escribe el código manualmente:',
+      totp_verify_label: 'Código de 6 dígitos',
+      totp_activate: 'Activar',
+      totp_skip: 'Omitir',
+      totp_verify_btn: 'Verificar y entrar',
+      totp_disable: 'Desactivar verificación en dos pasos',
+      totp_manage: 'Verificación en dos pasos',
+      totp_activated: 'Verificación en dos pasos activada',
+      totp_disabled: 'Verificación en dos pasos desactivada',
+      pw_req_len: 'Mínimo 8 caracteres',
+      pw_req_upper: 'Una mayúscula',
+      pw_req_lower: 'Una minúscula',
+      pw_req_digit: 'Un número',
+      pw_req_special: 'Un símbolo (!@#…)',
+      err_required: 'Completa todos los campos',
+      err_username_invalid: 'Usuario inválido: 3–30 caracteres, empieza con letra o número, sin @',
+      err_username_taken: 'Ese usuario ya existe',
+      err_weak_password: 'La contraseña no cumple los requisitos',
+      err_pass_mismatch: 'Las contraseñas no coinciden',
+      err_auth_failed: 'Usuario o contraseña incorrectos',
+      err_locked: 'Demasiados intentos. Espera {a} min',
+      err_totp_invalid: 'Código incorrecto',
+      err_auth_required: 'Sesión no válida. Inicia sesión de nuevo.',
+      err_bad_request: 'Solicitud inválida',
+      err_internal: 'Error del servidor. Inténtalo más tarde.',
+      err_network: 'Sin conexión. Conéctate e inténtalo de nuevo.',
+      welcome_created: '¡Cuenta creada!',
+      welcome_recovered: 'Contraseña restablecida',
+      pw_changed: 'Contraseña cambiada',
+      codes_regenerated: 'Códigos de respaldo regenerados',
+      security_title: 'Seguridad',
+      account_label: 'Cuenta',
+      current_password: 'Contraseña actual',
+      change_password_btn: 'Cambiar contraseña',
+      regen_codes: 'Regenerar códigos'
     },
     en: {
       app_name: 'MasterCards',
@@ -351,7 +418,72 @@ var I18N = {
       prompt_intro: 'Act as an expert flashcard creator. Make a deck about "{a}" with clear, concise question/answer cards.',
       prompt_rule1: 'Output EXACTLY this JSON format, with no extra text:',
       prompt_rule2: 'Use "q" for the question, "a" for the answer and "e" (optional) for a short explanation of why it is correct.',
-      prompt_rule3: 'Between 10 and 30 cards, in English.'
+      prompt_rule3: 'Between 10 and 30 cards, in English.',
+      // MasterCards accounts (username + password)
+      or: 'or',
+      username: 'Username',
+      username_ph: 'my_username',
+      username_hint: '3–30 chars: letters, numbers, . _ -',
+      password: 'Password',
+      repeat_password: 'Repeat password',
+      login_btn: 'Sign in',
+      create_account: 'Create account',
+      forgot_password: 'Forgot your password?',
+      goto_login: 'I already have an account',
+      register_btn: 'Sign up',
+      continue: 'Continue',
+      backup_codes_title: 'Recovery codes',
+      backup_codes_hint: 'Keep them in a safe place. Each code can be used only ONCE.',
+      backup_codes_confirm: 'I have saved my codes',
+      backup_codes_copy: 'Copy',
+      backup_codes_download: 'Download',
+      recover_title: 'Recover account',
+      recover_method: 'Recovery method',
+      recover_method_backup: 'Backup code',
+      recover_method_totp: 'Authenticator app',
+      recover_code: 'Code',
+      recover_code_ph: 'XXXXX-XXXXX or 6 digits',
+      new_password: 'New password',
+      recover_btn: 'Recover',
+      totp_title: 'Two-step verification (optional)',
+      totp_title_login: 'Two-step verification',
+      totp_hint: 'Scan the QR code with an authenticator app (Google Authenticator, Authy…).',
+      totp_login_hint: 'Enter the 6-digit code from your authenticator app.',
+      totp_manual_hint: 'Or type the code manually:',
+      totp_verify_label: '6-digit code',
+      totp_activate: 'Enable',
+      totp_skip: 'Skip',
+      totp_verify_btn: 'Verify and sign in',
+      totp_disable: 'Disable two-step verification',
+      totp_manage: 'Two-step verification',
+      totp_activated: 'Two-step verification enabled',
+      totp_disabled: 'Two-step verification disabled',
+      pw_req_len: 'At least 8 characters',
+      pw_req_upper: 'One uppercase letter',
+      pw_req_lower: 'One lowercase letter',
+      pw_req_digit: 'One number',
+      pw_req_special: 'One symbol (!@#…)',
+      err_required: 'Fill in all fields',
+      err_username_invalid: 'Invalid username: 3–30 chars, start with a letter or number, no @',
+      err_username_taken: 'That username is already taken',
+      err_weak_password: 'The password does not meet the requirements',
+      err_pass_mismatch: 'The passwords do not match',
+      err_auth_failed: 'Incorrect username or password',
+      err_locked: 'Too many attempts. Wait {a} min',
+      err_totp_invalid: 'Incorrect code',
+      err_auth_required: 'Invalid session. Sign in again.',
+      err_bad_request: 'Invalid request',
+      err_internal: 'Server error. Try again later.',
+      err_network: 'Offline. Connect and try again.',
+      welcome_created: 'Account created!',
+      welcome_recovered: 'Password reset',
+      pw_changed: 'Password changed',
+      codes_regenerated: 'Backup codes regenerated',
+      security_title: 'Security',
+      account_label: 'Account',
+      current_password: 'Current password',
+      change_password_btn: 'Change password',
+      regen_codes: 'Regenerate codes'
     }
   },
 
@@ -535,7 +667,7 @@ var Store = {
 
   /** Carga todas las claves una vez (boot). */
   load: function () {
-    [K.EMAIL, K.DECKS, K.CARDS, K.QUEUE, K.SETTINGS, K.META].forEach(function (key) {
+    [K.EMAIL, K.MC_USERNAME, K.MC_TOKEN, K.DECKS, K.CARDS, K.QUEUE, K.SETTINGS, K.META].forEach(function (key) {
       try { Store.data[key] = JSON.parse(localStorage.getItem(key)); }
       catch (e) { Store.data[key] = null; }
     });
@@ -558,6 +690,15 @@ var Store = {
 
   email: function () { return Store.data[K.EMAIL] || ''; },
   setEmail: function (v) { Store.data[K.EMAIL] = v; Store.save(K.EMAIL); },
+
+  getMcUsername: function () { return Store.data[K.MC_USERNAME] || ''; },
+  getMcToken: function () { return Store.data[K.MC_TOKEN] || ''; },
+  setMcAuth: function (username, apiToken) {
+    Store.data[K.MC_USERNAME] = username || '';
+    Store.data[K.MC_TOKEN] = apiToken || '';
+    Store.save(K.MC_USERNAME);
+    Store.save(K.MC_TOKEN);
+  },
 
   decks: function () { return Store.data[K.DECKS] || []; },
   setDecks: function (v) { Store.data[K.DECKS] = v; Store.save(K.DECKS); },
@@ -614,14 +755,42 @@ function removeCardLocal(id) {
 }
 
 // ------------------------------------------------------------------
-// 4. Auth — Google Identity Services (flujo redirect, no popup)
+// 4. Auth — sesión Google (GIS) o cuenta MasterCards (usuario+contraseña)
 // ------------------------------------------------------------------
 var Auth = {
   token: null,
   tokenExp: 0,
+  mode: 'google', // 'google' | 'mc'
+
+  /** ¿Sesión de cuenta MasterCards activa? */
+  isMc: function () { return Auth.mode === 'mc'; },
+
+  /** ¿Hay sesión guardada y válida (Google o MC)? */
+  hasSession: function () {
+    if (Auth.mode === 'mc') return !!Store.getMcToken() && !!Store.getMcUsername();
+    return !!Store.email();
+  },
+
+  /** Dueño (owner) para el backend: email de Google o username de MC. */
+  owner: function () {
+    return Auth.mode === 'mc' ? Store.getMcUsername() : Store.email();
+  },
+
+  /** Boot: restaura la sesión MC si existe; si no, prepara el login con Google. */
+  init: function () {
+    var u = Store.getMcUsername(), tk = Store.getMcToken();
+    if (u && tk) {
+      Auth.mode = 'mc';
+      Auth.token = tk;
+      Auth.tokenExp = 0; // los tokens MC no caducan; se rotan en cada login
+      return;
+    }
+    Auth.mode = 'google';
+    Auth.initGoogle();
+  },
 
   /** Inicializa GIS y pinta el botón de login. */
-  init: function () {
+  initGoogle: function () {
     if (typeof google === 'undefined' || !google.accounts) {
       document.getElementById('login-error').textContent = t('gis_error');
       document.getElementById('login-error').classList.remove('hidden');
@@ -644,6 +813,7 @@ var Auth = {
   handleCredential: function (jwt) {
     if (!jwt) return;
     var payload = decodeJwt(jwt);
+    Auth.mode = 'google';
     Auth.token = jwt;
     Auth.tokenExp = (payload.exp || 0) * 1000;
     Store.setEmail((payload.email || '').toLowerCase());
@@ -656,22 +826,56 @@ var Auth = {
     startApp();
   },
 
-  /** Devuelve el ID token si aún es válido (margen 60s). */
+  /** Devuelve el token actual si es válido (Google con margen 60s; MC siempre). */
   getToken: function () {
+    if (Auth.mode === 'mc') return Store.getMcToken() || null;
     if (Auth.token && Auth.tokenExp > Date.now() + 60000) return Auth.token;
     return null;
   },
 
-  /** Pide un token fresco a Google (redirect). Se usa si el token expiró. */
+  /** Token rechazado: en MC cerramos sesión; en Google pedimos uno nuevo. */
   refresh: function () {
+    if (Auth.mode === 'mc') { Auth.logout(); return; }
     if (typeof google !== 'undefined' && google.accounts) {
       google.accounts.id.prompt();
     }
   },
 
+  /** Guarda la sesión de una cuenta MasterCards. */
+  startMcSession: function (username, apiToken) {
+    Auth.mode = 'mc';
+    Auth.token = apiToken;
+    Auth.tokenExp = 0;
+    Store.setMcAuth(username, apiToken);
+  },
+
+  /** POST de auth a la Web App. Lanza Error con err.code en caso de fallo. */
+  postAuth: function (action, body) {
+    if (!navigator.onLine) {
+      var ne = new Error(t('err_network'));
+      ne.code = 'OFFLINE';
+      return Promise.reject(ne);
+    }
+    return fetch(CONFIG.SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: action }, body))
+    }).then(function (r) { return r.json(); }).then(function (json) {
+      if (!json.ok) {
+        var err = new Error(authErrText({ code: json.error, message: json.message, auth: json }));
+        err.code = json.error;
+        err.auth = json;
+        throw err;
+      }
+      return json.data;
+    });
+  },
+
   /** Cierra sesión: olvida email y token. Los datos locales se conservan. */
   logout: function () {
     Store.setEmail('');
+    Store.setMcAuth('', '');
+    Auth.mode = 'google';
     Auth.token = null;
     Auth.tokenExp = 0;
     location.hash = '';
@@ -686,6 +890,471 @@ function decodeJwt(jwt) {
   var b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
   while (b64.length % 4) b64 += '=';
   return JSON.parse(decodeURIComponent(escape(atob(b64))));
+}
+
+// ------------------------------------------------------------------
+// 4.5 CUENTAS MASTERCARDS — login/registro/recuperación/TOTP (UI)
+// ------------------------------------------------------------------
+var MC = {
+  pendingLogin: null,    // {username, password} esperando TOTP en el login
+  pendingRegister: null, // {username, apiToken} tras registrarse
+  backupCodes: null,
+  backupOnDone: null,    // continuación tras confirmar los códigos
+  totpSetupToken: null   // token para activar TOTP
+};
+
+var USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+var TOTP_RE = /^\d{6}$/;
+
+var AUTH_ERR_KEYS = {
+  OFFLINE: 'err_network',
+  AUTH_FAILED: 'err_auth_failed',
+  LOCKED: 'err_locked',
+  USERNAME_TAKEN: 'err_username_taken',
+  INVALID_USERNAME: 'err_username_invalid',
+  WEAK_PASSWORD: 'err_weak_password',
+  TOTP_INVALID: 'err_totp_invalid',
+  AUTH_REQUIRED: 'err_auth_required',
+  BAD_REQUEST: 'err_bad_request',
+  INTERNAL: 'err_internal'
+};
+
+/** Texto de error traducible a partir del error/JSON de auth. */
+function authErrText(err) {
+  if (err && err.code && AUTH_ERR_KEYS[err.code]) {
+    var key = AUTH_ERR_KEYS[err.code];
+    if (err.code === 'LOCKED' && err.auth && err.auth.data && err.auth.data.bloqueoMs) {
+      return t(key, { a: Math.ceil(err.auth.data.bloqueoMs / 60000) });
+    }
+    return t(key);
+  }
+  return (err && err.message) ? err.message : t('err_internal');
+}
+
+function showErr(el, err) {
+  if (el) { el.textContent = authErrText(err); el.classList.remove('hidden'); }
+}
+
+/** Política de contraseña (espejo del backend). Devuelve {ok, fails:[claves]}. */
+function validarPasswordMC(pw) {
+  var fails = [];
+  if (typeof pw !== 'string' || pw.length < 8 || pw.length > 128) {
+    fails.push('pw_req_len', 'pw_req_upper', 'pw_req_lower', 'pw_req_digit', 'pw_req_special');
+  } else {
+    if (!/[A-Z]/.test(pw)) fails.push('pw_req_upper');
+    if (!/[a-z]/.test(pw)) fails.push('pw_req_lower');
+    if (!/[0-9]/.test(pw)) fails.push('pw_req_digit');
+    if (!/[^A-Za-z0-9]/.test(pw)) fails.push('pw_req_special');
+  }
+  return { ok: fails.length === 0, fails: fails };
+}
+
+function normUsername(s) { return String(s || '').trim().toLowerCase(); }
+function normTotp(s) { return String(s || '').replace(/\s+/g, ''); }
+
+/** Medidor de fortaleza: barra + lista de requisitos. */
+function renderPwMeter(el, pw) {
+  if (!el) return;
+  var pol = validarPasswordMC(pw);
+  var reqs = ['pw_req_len', 'pw_req_upper', 'pw_req_lower', 'pw_req_digit', 'pw_req_special'];
+  var strength = pol.ok ? 4 : Math.max(0, 4 - pol.fails.length);
+  el.innerHTML = '<div class="pw-bar"><span class="pw-fill" data-lvl="' + strength + '"></span></div><ul class="pw-reqs">' +
+    reqs.map(function (key) {
+      var ok = pol.fails.indexOf(key) === -1;
+      return '<li class="' + (ok ? 'ok' : '') + '"><i class="fa-solid fa-circle-' + (ok ? 'check' : 'xmark') + '"></i> ' + esc(t(key)) + '</li>';
+    }).join('') + '</ul>';
+}
+
+function renderBackupCodes(codes) {
+  return (codes || []).map(function (c) {
+    return '<code class="bc">' + esc(c) + '</code>';
+  }).join('');
+}
+
+/** Configura el modo de la pantalla TOTP ('setup' para QR, 'login' para verificar). */
+function setTotpMode(mode) {
+  var isSetup = mode === 'setup';
+  document.getElementById('totp-title').textContent = t(isSetup ? 'totp_title' : 'totp_title_login');
+  document.getElementById('totp-hint').textContent = t(isSetup ? 'totp_hint' : 'totp_login_hint');
+  document.getElementById('totp-qr').hidden = !isSetup;
+  document.getElementById('totp-secret').hidden = !isSetup;
+  document.getElementById('totp-manual-hint').hidden = !isSetup;
+  document.getElementById('btn-totp-skip').hidden = !isSetup;
+  document.getElementById('btn-totp-activate').textContent = t(isSetup ? 'totp_activate' : 'totp_verify_btn');
+  document.getElementById('btn-totp-disable').hidden = true;
+  document.getElementById('totp-code').value = '';
+  document.getElementById('totp-error').classList.add('hidden');
+}
+
+function enterTotpLogin() {
+  setTotpMode('login');
+  document.getElementById('app-header').classList.add('hidden');
+  show('totp');
+}
+
+function enterTotpSetup(td) {
+  setTotpMode('setup');
+  if (td && td.otpauth) {
+    document.getElementById('totp-qr-img').src =
+      'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(td.otpauth);
+  }
+  document.getElementById('totp-secret').value = (td && td.secret) || '';
+  document.getElementById('app-header').classList.add('hidden');
+  show('totp');
+}
+
+function gotoAccount(screen) {
+  ['mc-login-error', 'reg-error', 'rec-error', 'totp-error'].forEach(function (id) {
+    document.getElementById(id).classList.add('hidden');
+  });
+  MC.pendingLogin = null;
+  document.getElementById('app-header').classList.add('hidden');
+  show(screen);
+}
+
+function doLoginMC() {
+  var errEl = document.getElementById('mc-login-error');
+  errEl.classList.add('hidden');
+  var username = normUsername(document.getElementById('mc-username').value);
+  var pw = document.getElementById('mc-password').value;
+  if (!username || !pw) {
+    errEl.textContent = t('err_required');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  var attempt = function (totp) {
+    var body = { username: username, password: pw };
+    if (totp) body.totpCode = totp;
+    return Auth.postAuth('login', body).then(function (data) {
+      if (data.totpRequerido) {
+        MC.pendingLogin = { username: username, password: pw };
+        enterTotpLogin();
+        return;
+      }
+      Auth.startMcSession(username, data.apiToken);
+      document.getElementById('mc-password').value = '';
+      startApp();
+    }).catch(function (err) {
+      showErr(errEl, err);
+      if (err.code !== 'LOCKED') document.getElementById('mc-password').value = '';
+      document.getElementById('mc-password').focus();
+    });
+  };
+  attempt(null);
+}
+
+function doRegister() {
+  var errEl = document.getElementById('reg-error');
+  errEl.classList.add('hidden');
+  var username = normUsername(document.getElementById('reg-username').value);
+  var pw = document.getElementById('reg-password').value;
+  var pw2 = document.getElementById('reg-password2').value;
+  if (!username || !pw || !pw2) {
+    errEl.textContent = t('err_required');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!USERNAME_RE.test(username)) {
+    errEl.textContent = t('err_username_invalid');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!validarPasswordMC(pw).ok) {
+    errEl.textContent = t('err_weak_password');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (pw !== pw2) {
+    errEl.textContent = t('err_pass_mismatch');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  var btn = document.getElementById('form-register').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  Auth.postAuth('register', { username: username, password: pw })
+    .then(function (data) {
+      MC.pendingRegister = { username: data.username, apiToken: data.apiToken };
+      MC.backupCodes = data.backupCodes;
+      MC.backupOnDone = finishRegisterWithTotp;
+      document.getElementById('backup-codes-list').innerHTML = renderBackupCodes(data.backupCodes);
+      document.getElementById('backup-codes-confirm').checked = false;
+      document.getElementById('btn-backup-codes-next').disabled = true;
+      document.getElementById('app-header').classList.add('hidden');
+      show('backupcodes');
+    })
+    .catch(function (err) { showErr(errEl, err); })
+    .then(function () { btn.disabled = false; });
+}
+
+/** Tras confirmar códigos en el registro: paso opcional de TOTP. */
+function finishRegisterWithTotp() {
+  var reg = MC.pendingRegister;
+  if (!reg) return;
+  Auth.postAuth('totpSetup', { token: reg.apiToken })
+    .then(function (td) {
+      MC.totpSetupToken = reg.apiToken;
+      enterTotpSetup(td);
+    })
+    .catch(function () {
+      // Sin TOTP: iniciar sesión directamente
+      Auth.startMcSession(reg.username, reg.apiToken);
+      MC.pendingRegister = null;
+      MC.totpSetupToken = null;
+      toast(t('welcome_created'));
+      startApp();
+    });
+}
+
+function onBackupNext() {
+  if (!MC.backupCodes) return;
+  var next = MC.backupOnDone;
+  MC.backupCodes = null;
+  MC.backupOnDone = null;
+  if (typeof next === 'function') { next(); return; }
+  show('ajustes');
+}
+
+function onTotpActivate() {
+  var errEl = document.getElementById('totp-error');
+  errEl.classList.add('hidden');
+  var code = normTotp(document.getElementById('totp-code').value);
+  if (!TOTP_RE.test(code)) {
+    errEl.textContent = t('err_totp_invalid');
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  if (MC.pendingLogin) {
+    var pl = MC.pendingLogin;
+    MC.pendingLogin = null;
+    Auth.postAuth('login', { username: pl.username, password: pl.password, totpCode: code })
+      .then(function (data) {
+        if (data.totpRequerido) {
+          MC.pendingLogin = pl;
+          errEl.textContent = t('err_totp_invalid');
+          errEl.classList.remove('hidden');
+          return;
+        }
+        Auth.startMcSession(pl.username, data.apiToken);
+        startApp();
+      })
+      .catch(function (err) { showErr(errEl, err); });
+    return;
+  }
+
+  if (MC.totpSetupToken) {
+    Auth.postAuth('totpSetup', { token: MC.totpSetupToken, totpCode: code })
+      .then(function (data) {
+        if (data.activo) {
+          toast(t('totp_activated'));
+          MC.totpSetupToken = null;
+          if (MC.pendingRegister) {
+            var reg = MC.pendingRegister;
+            MC.pendingRegister = null;
+            Auth.startMcSession(reg.username, reg.apiToken);
+            toast(t('welcome_created'));
+            startApp();
+          } else {
+            show('ajustes');
+          }
+        }
+      })
+      .catch(function (err) { showErr(errEl, err); });
+  }
+}
+
+function onTotpSkip() {
+  MC.totpSetupToken = null;
+  if (MC.pendingRegister) {
+    var reg = MC.pendingRegister;
+    MC.pendingRegister = null;
+    Auth.startMcSession(reg.username, reg.apiToken);
+    toast(t('welcome_created'));
+    startApp();
+    return;
+  }
+  show('ajustes');
+}
+
+function onTotpDisable() {
+  Auth.postAuth('totpSetup', { token: Auth.getToken(), disable: true })
+    .then(function () {
+      toast(t('totp_disabled'));
+      show('ajustes');
+    })
+    .catch(function (err) { toast(authErrText(err)); });
+}
+
+function openTotpSettings() {
+  Auth.postAuth('totpSetup', { token: Auth.getToken() })
+    .then(function (td) {
+      MC.totpSetupToken = Auth.getToken();
+      setTotpMode('setup');
+      document.getElementById('btn-totp-disable').hidden = false;
+      if (td.otpauth) {
+        document.getElementById('totp-qr-img').src =
+          'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(td.otpauth);
+      }
+      document.getElementById('totp-secret').value = td.secret || '';
+      document.getElementById('totp-code').value = '';
+      show('totp');
+    })
+    .catch(function (err) { toast(authErrText(err)); });
+}
+
+function doRecover() {
+  var errEl = document.getElementById('rec-error');
+  errEl.classList.add('hidden');
+  var username = normUsername(document.getElementById('rec-username').value);
+  var methodEl = document.querySelector('#seg-recover-method .active');
+  var method = methodEl ? methodEl.dataset.value : 'backup';
+  var code = normTotp(document.getElementById('rec-code').value);
+  var pw = document.getElementById('rec-password').value;
+  var pw2 = document.getElementById('rec-password2').value;
+  if (!username || !code) {
+    errEl.textContent = t('err_required');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!validarPasswordMC(pw).ok) {
+    errEl.textContent = t('err_weak_password');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (pw !== pw2) {
+    errEl.textContent = t('err_pass_mismatch');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  var btn = document.getElementById('form-recover').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  Auth.postAuth('recover', { username: username, method: method, code: code, nuevo: pw })
+    .then(function (data) {
+      Auth.startMcSession(username, data.apiToken);
+      toast(t('welcome_recovered'));
+      startApp();
+    })
+    .catch(function (err) { showErr(errEl, err); })
+    .then(function () { btn.disabled = false; });
+}
+
+function doChangePassword() {
+  var errEl = document.getElementById('cp-error');
+  errEl.classList.add('hidden');
+  var actual = document.getElementById('cp-current').value;
+  var nuevo = document.getElementById('cp-new').value;
+  var nuevo2 = document.getElementById('cp-new2').value;
+  if (!validarPasswordMC(nuevo).ok) {
+    errEl.textContent = t('err_weak_password');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (nuevo !== nuevo2) {
+    errEl.textContent = t('err_pass_mismatch');
+    errEl.classList.remove('hidden');
+    return;
+  }
+  var btn = document.getElementById('form-change-password').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  Auth.postAuth('changePassword', { token: Auth.getToken(), actual: actual, nuevo: nuevo })
+    .then(function (data) {
+      Store.setMcAuth(Store.getMcUsername(), data.apiToken);
+      Auth.token = data.apiToken;
+      document.getElementById('form-change-password').reset();
+      document.getElementById('cp-pw-meter').innerHTML = '';
+      toast(t('pw_changed'));
+    })
+    .catch(function (err) { showErr(errEl, err); })
+    .then(function () { btn.disabled = false; });
+}
+
+function doRegenCodes() {
+  Auth.postAuth('generateBackupCodes', { token: Auth.getToken() })
+    .then(function (data) {
+      MC.backupCodes = data.backupCodes;
+      MC.backupOnDone = function () { show('ajustes'); };
+      document.getElementById('backup-codes-list').innerHTML = renderBackupCodes(data.backupCodes);
+      document.getElementById('backup-codes-confirm').checked = false;
+      document.getElementById('btn-backup-codes-next').disabled = true;
+      show('backupcodes');
+      toast(t('codes_regenerated'));
+    })
+    .catch(function (err) { toast(authErrText(err)); });
+}
+
+/** Muestra u oculta el bloque de seguridad en Ajustes (solo cuentas MC). */
+function updateSecurityUI() {
+  var sec = document.getElementById('security-section');
+  if (!sec) return;
+  sec.hidden = !Auth.isMc();
+  var info = document.getElementById('account-info');
+  if (info) info.textContent = Auth.isMc() ? t('account_label') + ': @' + Store.getMcUsername() : '';
+}
+
+/** Registra todos los eventos de las pantallas de cuenta. */
+function initAuthScreens() {
+  document.getElementById('btn-goto-register').addEventListener('click', function () { gotoAccount('registro'); });
+  document.getElementById('btn-goto-login').addEventListener('click', function () { gotoAccount('login'); });
+  document.getElementById('btn-goto-login2').addEventListener('click', function () { gotoAccount('login'); });
+  document.getElementById('btn-goto-recover').addEventListener('click', function () { gotoAccount('recuperar'); });
+
+  document.getElementById('form-login-mc').addEventListener('submit', function (e) {
+    e.preventDefault();
+    doLoginMC();
+  });
+
+  document.getElementById('form-register').addEventListener('submit', function (e) {
+    e.preventDefault();
+    doRegister();
+  });
+  document.getElementById('reg-password').addEventListener('input', function () {
+    renderPwMeter(document.getElementById('reg-pw-meter'), this.value);
+  });
+
+  document.getElementById('form-recover').addEventListener('submit', function (e) {
+    e.preventDefault();
+    doRecover();
+  });
+  document.getElementById('rec-password').addEventListener('input', function () {
+    renderPwMeter(document.getElementById('rec-pw-meter'), this.value);
+  });
+  document.querySelectorAll('#seg-recover-method button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#seg-recover-method button').forEach(function (x) {
+        x.classList.toggle('active', x === b);
+      });
+      document.getElementById('rec-code').placeholder = b.dataset.value === 'totp' ? '000000' : 'XXXXX-XXXXX';
+    });
+  });
+
+  document.getElementById('btn-backup-codes-copy').addEventListener('click', function () {
+    copyText(MC.backupCodes ? MC.backupCodes.join('\n') : '').then(function () { toast(t('backup_codes_copy')); });
+  });
+  document.getElementById('btn-backup-codes-download').addEventListener('click', function () {
+    if (!MC.backupCodes) return;
+    downloadJSON('mastercards-backup-codes.txt', MC.backupCodes.join('\n'));
+  });
+  document.getElementById('backup-codes-confirm').addEventListener('change', function () {
+    document.getElementById('btn-backup-codes-next').disabled = !this.checked;
+  });
+  document.getElementById('btn-backup-codes-next').addEventListener('click', onBackupNext);
+
+  document.getElementById('btn-totp-activate').addEventListener('click', onTotpActivate);
+  document.getElementById('btn-totp-skip').addEventListener('click', onTotpSkip);
+  document.getElementById('btn-totp-disable').addEventListener('click', onTotpDisable);
+  document.getElementById('totp-code').addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+  });
+
+  document.getElementById('btn-totp-manage').addEventListener('click', openTotpSettings);
+  document.getElementById('btn-regen-codes').addEventListener('click', doRegenCodes);
+  document.getElementById('form-change-password').addEventListener('submit', function (e) {
+    e.preventDefault();
+    doChangePassword();
+  });
+  document.getElementById('cp-new').addEventListener('input', function () {
+    renderPwMeter(document.getElementById('cp-pw-meter'), this.value);
+  });
 }
 
 // ------------------------------------------------------------------
@@ -776,7 +1445,7 @@ var SyncEngine = {
     var token = Auth.getToken();
     if (!token) return Promise.resolve();
     var url = CONFIG.SCRIPT_URL +
-      '?email=' + encodeURIComponent(Store.email()) +
+      '?email=' + encodeURIComponent(Auth.owner()) +
       '&token=' + encodeURIComponent(token);
     return fetch(url)
       .then(function (res) { return res.json(); })
@@ -1517,7 +2186,7 @@ var UI = {
     });
     document.getElementById('btn-export').addEventListener('click', function () {
       downloadJSON('mastercards-backup.json', {
-        email: Store.email(),
+        email: Auth.owner(),
         fecha: new Date().toISOString(),
         decks: Store.decks(),
         cards: Store.cards(),
@@ -1547,7 +2216,7 @@ var UI = {
     var shareId = params.get('share');
     if (!shareId) return;
     UI.pendingShare = shareId;
-    if (!Store.email()) return; // se procesará tras el login
+    if (!Auth.hasSession()) return; // se procesará tras el login
     UI.doImport(shareId);
   },
 
@@ -1701,8 +2370,9 @@ function boot() {
   initSyncListeners();
   initInstall();
   initPromptCopy();
-  // GIS solo hace falta si no hay sesión guardada (evita errores offline).
-  if (!Store.email()) Auth.init();
+  initAuthScreens();
+  // Auth: restaura sesión MC guardada o prepara el login con Google.
+  Auth.init();
 
   // Registrar Service Worker (solo en contexto seguro / HTTPS)
   if ('serviceWorker' in navigator) {
@@ -1746,6 +2416,7 @@ function boot() {
   function openSettings() {
     document.getElementById('header-title').textContent = t('settings');
     UI.applySettings();
+    updateSecurityUI();
     show('ajustes');
   }
   function openHome() {
@@ -1822,7 +2493,7 @@ function boot() {
   UI.initDrag();
 
   // Elegir pantalla inicial
-  if (Store.email()) {
+  if (Auth.hasSession()) {
     startApp();
   } else {
     show('login');

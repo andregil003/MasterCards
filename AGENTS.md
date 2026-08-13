@@ -33,6 +33,16 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 - Autenticación: **GIS (Google Identity Services)** con flujo `redirect`
   (los popups fallan en iOS). El frontend envía el ID token; el backend lo
   verifica contra `https://oauth2.googleapis.com/tokeninfo` y comprueba `aud`.
+- Segundo método de login (2026-08-12): **cuenta MasterCards** (usuario +
+  contraseña). Hash **PBKDF2-HMAC-SHA256** con 10.000 iteraciones y salt por
+  fila; política estricta (8–128, mayúscula, minúscula, dígito, símbolo);
+  **lockout** 5 fallos → 15 min. Recuperación SIN email: **backup codes**
+  (solo SHA-256 en la hoja) + **TOTP** opcional (RFC 6238, HMAC-SHA1 manual
+  sobre `Utilities.computeDigest`, secreto en Script Properties, ventana ±1) +
+  `adminResetPassword` del dueño. `verifyAnyToken_` distingue JWT (Google) vs
+  API token 64 hex (MC, guardado como SHA-256, rotado en cada login).
+  **OJO**: `Utilities.computeDigest` NO expone PBKDF2; se implementa a mano
+  (RFC 2898, dkLen=32) sobre HMAC-SHA256 manual hecho con `computeDigest(SHA_256)`.
 - Almacenamiento local: **localStorage** (mazos, tarjetas, email, syncQueue).
 - Datos en dos hojas: **Mazos** y **Tarjetas** (ver `02_SCHEMA.md`).
 - Sincronización: cola `syncQueue` en localStorage, un único POST en lote con
@@ -88,6 +98,20 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 - [x] Botón "Copiar prompt" para que una IA genere el JSON del mazo
 - [x] Tests automatizados (`node scripts/test.js`, `scripts/smoke-test.ps1`)
 - [x] Checklist de verificación (`docs/07_CHECKLIST.md`, con sección 7.8 de tests)
+- [x] Segundo método de login: cuenta MasterCards (usuario+contraseña, PBKDF2
+      10k, política estricta, lockout 5→15 min) — `backend.gs` + frontend
+- [x] Recuperación sin email: backup codes (solo SHA-256) + TOTP (RFC 6238,
+      secreto en Script Properties) + `adminResetPassword`
+- [x] `verifyAnyToken_`: mismo pull/flush para Google (JWT) y MC (token 64 hex)
+- [x] Frontend MC: pantallas registro/códigos/recuperar/TOTP, medidor de
+      contraseña, QR `api.qrserver.com` + secreto manual, Seguridad en Ajustes
+- [x] Tests ampliados: `scripts/test.js` (47 asserts, TOTP RFC 6238 + PBKDF2) y
+      `scripts/smoke-test.ps1` (caminos negativos de auth, tests 5–8)
+- [x] Backend desplegado con la feature de cuentas MC (Versión 6). Smoke test
+      8/8 OK + `scripts/e2e-auth.js` 16/16 OK (register → login → TOTP →
+      changePassword → backup codes → recover).
+- [ ] **PENDIENTE**: verificación manual (checklist 7.9) y borrar de la hoja
+      `Usuarios` los usuarios de prueba (`dbg_ewpb1r`, `e2e_63f0b0`, `e2e_6f26eb`)
 
 ## 6. Cómo verificar tu trabajo
 

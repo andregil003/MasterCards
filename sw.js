@@ -15,7 +15,7 @@
  * ============================================================
  */
 
-const CACHE = 'mastercards-v2';
+const CACHE = 'mastercards-v3';
 const ASSETS = [
   './',
   './index.html',

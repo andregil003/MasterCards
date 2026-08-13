@@ -24,8 +24,9 @@ fetch(SCRIPT_URL, {
 
 ## 3.3 GET — Pull y compartición
 
-### `GET {SCRIPT_URL}?email=<email>&token=<idToken>`
-Pull completo del usuario. Respuesta:
+### `GET {SCRIPT_URL}?email=<owner>&token=<token>`
+Pull completo del usuario. `token` = **ID token de Google** (JWT) **o API token
+de cuenta MasterCards** (64 hex). Respuesta:
 
 ```json
 {
@@ -47,7 +48,7 @@ Mazo público de solo lectura (sin auth). Respuesta: `{ "ok":true, "data": { "de
 
 ```json
 {
-  "token": "<idToken>",
+  "token": "<idToken o apiToken MC>",
   "syncOperations": [
     { "opId": "uuid", "tipo": "createDeck", "createdAt": 123, "data": {...} },
     ...
@@ -90,7 +91,9 @@ reintentan).
 ## 3.5 Errores
 
 Respuesta de error: `{ "ok": false, "error": "CÓDIGO", "message": "..." }`.
-Códigos: `BAD_REQUEST`, `AUTH_REQUIRED`, `AUTH_FAILED`, `INTERNAL`.
+Códigos de sync: `BAD_REQUEST`, `AUTH_REQUIRED`, `AUTH_FAILED`, `INTERNAL`.
+Códigos de cuentas MC (además): `USERNAME_TAKEN`, `INVALID_USERNAME`,
+`WEAK_PASSWORD`, `TOTP_INVALID`, `LOCKED` (con `data.bloqueoMs` restante).
 
 ## 3.6 Motor de sincronización (Sync Engine)
 
@@ -124,10 +127,48 @@ Códigos: `BAD_REQUEST`, `AUTH_REQUIRED`, `AUTH_FAILED`, `INTERNAL`.
 
 ## 3.7 Autenticación
 
-- GIS emite un **ID token** (~1h de vida). El frontend lo guarda en memoria (NO
-  en localStorage de forma persistente) y lo refresca on-demand antes de cada
-  flush/pull.
-- El backend verifica el token contra `oauth2.googleapis.com/tokeninfo` y
-  comprueba `aud === CLIENT_ID` y `email_verified`.
-- Si el token expiró entre que se generó y se envía, el backend responde
-  `AUTH_FAILED`; el frontend refresca el token y reintenta una vez.
+Hay dos tipos de sesión, y el backend las distingue automáticamente
+(`verifyAnyToken_`):
+
+1. **Google (GIS)**: ID token JWT (~1h de vida). El frontend lo guarda en
+   memoria (NO en localStorage de forma persistente) y lo refresca on-demand
+   antes de cada flush/pull. El backend lo verifica contra
+   `oauth2.googleapis.com/tokeninfo` y comprueba `aud === CLIENT_ID` y
+   `email_verified`.
+2. **Cuenta MasterCards**: username + contraseña. El API token (64 hex) se
+   guarda en `mc_username`/`mc_apitoken` (localStorage) y se envía igual que el
+   ID token. El backend lo hashea (SHA-256) y lo compara contra la hoja
+   `Usuarios`. Los tokens MC **no caducan** pero se **rotan** en cada
+   login/cambio de contraseña/recuperación.
+
+Si el token expiró o es rechazado, el backend responde `AUTH_FAILED`; el
+frontend refresca el token (Google) o cierra sesión (MC) y reintenta una vez.
+
+## 3.8 Cuentas MasterCards — endpoint de auth
+
+`POST {SCRIPT_URL}` con `Content-Type: text/plain;charset=utf-8`, body
+`{ "action": "...", ... }`. Las acciones públicas no llevan token; las
+autenticadas llevan `token` en el mismo body.
+
+| action | autenticada | body | respuesta `ok` |
+|--------|------------|------|----------------|
+| `register` | no | `{username, password}` | `{username, apiToken, backupCodes[10], iteraciones}` |
+| `login` | no | `{username, password, totpCode?}` | `{totpRequerido:true}` (si TOTP activo sin código) o `{username, apiToken, totpActivo}` |
+| `recover` | no | `{username, method:'backup'\|'totp', code, nuevo}` | `{username, apiToken}` (rota token y TOTP) |
+| `totpSetup` | sí | `{token, totpCode?, disable?}` | `{pending, secret, otpauth}` o `{activo}` |
+| `changePassword` | sí | `{token, actual, nuevo}` | `{apiToken}` (token rotado) |
+| `generateBackupCodes` | sí | `{token}` | `{backupCodes[10]}` (invalida los anteriores) |
+
+Reglas de seguridad:
+- Username: `^[a-z0-9][a-z0-9._-]{2,29}$` (minúsculas, sin `@`).
+- Password: 8–128 con mayúscula, minúscula, dígito y símbolo; PBKDF2-HMAC-SHA256
+  con 10.000 iteraciones y salt por fila.
+- **Lockout**: 5 fallos de login/recover → cuenta bloqueada 15 min
+  (`LOCKED` con `data.bloqueoMs`).
+- Backup codes: formato `XXXXX-XXXXX`, alfabeto `ABCDEFGHJKMNPQRSTUVWXYZ23456789`,
+  solo se guardan hasheados (SHA-256) y se consumen de a uno.
+- TOTP: RFC 6238, HMAC-SHA1, 6 dígitos, ventana ±1 paso. Secreto en Script
+  Properties (`TOTP:<usuario>`). Apps Script no tiene HMAC-SHA1 nativo → se
+  implementa sobre `Utilities.computeDigest`.
+- `adminResetPassword(username, nueva)` (del dueño en el editor de Apps Script)
+  como red de seguridad.

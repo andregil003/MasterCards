@@ -66,6 +66,46 @@ try {
   Check 'incluye mensaje de error' (-not [string]::IsNullOrEmpty($j.error)) ($j | ConvertTo-Json -Compress)
 } catch { Check 'GET share JSON' $false $_.Exception.Message }
 
+# ------------------------------------------------------------------
+# 5-8) Caminos negativos de las cuentas MasterCards (requieren el
+#      backend con la feature de auth). NO crean cuentas reales.
+#      Nota: Apps Script responde 302 la primera vez -> misma sesión.
+# ------------------------------------------------------------------
+function PostJson([string]$body) {
+  $sess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  Invoke-RestMethod -Uri $URL -WebSession $sess -TimeoutSec 30 | Out-Null # warmup (302 + cookie)
+  return Invoke-RestMethod -Uri $URL -Method Post -Body $body `
+    -ContentType 'text/plain;charset=utf-8' -WebSession $sess -TimeoutSec 30
+}
+
+# 5) register con contraseña débil -> WEAK_PASSWORD (sin crear cuenta)
+Write-Host '5) POST register (contrasena debil)'
+try {
+  $j = PostJson '{"action":"register","username":"smoke_test_user","password":"corta1"}'
+  Check 'responde WEAK_PASSWORD' ($j.error -eq 'WEAK_PASSWORD') ($j | ConvertTo-Json -Compress)
+} catch { Check 'register WEAK_PASSWORD' $false $_.Exception.Message }
+
+# 6) register con usuario inválido -> INVALID_USERNAME
+Write-Host '6) POST register (usuario invalido)'
+try {
+  $j = PostJson '{"action":"register","username":"smoke!!","password":"P@ssw0rd!Xy"}'
+  Check 'responde INVALID_USERNAME' ($j.error -eq 'INVALID_USERNAME') ($j | ConvertTo-Json -Compress)
+} catch { Check 'register INVALID_USERNAME' $false $_.Exception.Message }
+
+# 7) login de un usuario inexistente -> AUTH_FAILED
+Write-Host '7) POST login (usuario inexistente)'
+try {
+  $j = PostJson '{"action":"login","username":"usuario_inexistente_xyz","password":"P@ssw0rd!Xy"}'
+  Check 'responde AUTH_FAILED' ($j.error -eq 'AUTH_FAILED') ($j | ConvertTo-Json -Compress)
+} catch { Check 'login AUTH_FAILED' $false $_.Exception.Message }
+
+# 8) recover de un usuario inexistente -> AUTH_FAILED
+Write-Host '8) POST recover (usuario inexistente)'
+try {
+  $j = PostJson '{"action":"recover","username":"usuario_inexistente_xyz","method":"backup","code":"XXXXX-XXXXX","nuevo":"P@ssw0rd!Xy"}'
+  Check 'responde AUTH_FAILED' ($j.error -eq 'AUTH_FAILED') ($j | ConvertTo-Json -Compress)
+} catch { Check 'recover AUTH_FAILED' $false $_.Exception.Message }
+
 Write-Host ''
 if ($ok) { Write-Host 'Smoke test OK' -ForegroundColor Green; exit 0 }
 else     { Write-Host 'Smoke test con fallos' -ForegroundColor Red; exit 1 }

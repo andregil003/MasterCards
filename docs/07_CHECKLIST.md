@@ -75,6 +75,33 @@
 > La sección 7.8 se comprueba sin navegador. El resto es manual.
 
 - [ ] `node scripts/test.js` → termina con `FAIL=0` (SM-2, markdown, fechas,
-      i18n, paridad de claves y cobertura `data-i18n` del HTML).
+      i18n, paridad de claves y cobertura `data-i18n` del HTML; política de
+      contraseña, username, TOTP RFC 6238 y PBKDF2).
 - [ ] `powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1` →
-      `Smoke test OK` (contrato JSON del backend desplegado).
+      `Smoke test OK` (contrato JSON del backend desplegado, incluye caminos
+      negativos de auth).
+
+## 7.9 Cuentas MasterCards (usuario + contraseña)
+
+- [ ] Login con Google sigue funcionando (sin cuentas MC el flujo es idéntico).
+- [ ] Crear cuenta con contraseña fuerte → muestra los 10 códigos de respaldo
+      (copiar y descargar) → requiere confirmar antes de continuar → se entra
+      con sesión MC y se puede sincronizar.
+- [ ] El medidor de fortaleza marca los requisitos y rechaza contraseñas débiles.
+- [ ] Username duplicado → `Ese usuario ya existe`.
+- [ ] Login con usuario/contraseña correctos → dashboard.
+- [ ] Login con contraseña errónea → `Usuario o contraseña incorrectos`;
+      5 fallos → cuenta bloqueada 15 min (`Demasiados intentos. Espera 15 min`).
+- [ ] TOTP opcional tras el registro: escanear QR (o secreto manual), verificar
+      con un código de Google Authenticator → activado. Siguiente login pide el
+      código de 6 dígitos.
+- [ ] Recuperar cuenta con un backup code → pide contraseña nueva → entra y el
+      código usado queda invalidado.
+- [ ] Recuperar con TOTP (si está activo) funciona.
+- [ ] Ajustes → Seguridad (solo cuentas MC): cambiar contraseña rota el token
+      (la app sigue funcionando sin re-login); regenerar códigos invalida los
+      anteriores; desactivar TOTP.
+- [ ] Cerrar sesión MC → vuelve al login y los datos locales se conservan.
+- [ ] Compartir/importar mazo funcionan con una sesión MC.
+- [ ] `adminResetPassword('usuario', 'Nueva#Pass1')` en el editor de Apps Script
+      restablece una cuenta olvidada.
