@@ -127,7 +127,7 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   `@media (min-width: 900px)` amplía `main` a 1080px, mazos en grid
   (auto-fill 280px), oculta la barra inferior (navegación por el header),
   FAB junto al contenedor y estudio/sheet/ajustes centrados. Logo oficial =
-  `assets/icons/icon-192.png` (tarjeta blanca con raya verde) en la cabecera.
+  `assets/icons/icon-192.png` (tarjeta blanca con rayo verde) en la cabecera.
 - 2026-08-12: Se retira el logo grande de las pantallas de login/cuenta (se veía
   mal); el logo queda solo como icono pequeño en la cabecera.
 - 2026-08-12: Unificación de espaciados (reglas `.btn.block + .btn.block`,
@@ -138,9 +138,10 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
   manejadores globales de error (`window.onerror`/`unhandledrejection`) con un
   `crash-box` visible (mensaje + recargar) para evitar pantallas en blanco.
 - 2026-08-12: El logo oficial se regenera como **PNG transparente** (tarjeta
-  blanca redondeada + raya verde diagonal, `assets/icons/icon-192.png`) y se
+  blanca redondeada + rayo verde, `assets/icons/icon-192.png`) y se
   vuelve a colocar en las 5 pantallas de cuenta (`logo-img`, 96px, con sombra
-  verde suave) además de la cabecera. SW a `mastercards-v5`.
+  verde suave) además de la cabecera. SW a `mastercards-v5`, luego `v6` al
+  sustituir la banda diagonal por el rayo clásico.
 - 2026-08-12: **Tipos de tarjeta**: `tarjeta` (4 botones SRS), `abierta`
   (manual «La sabía»/«No la sabía»), `opcion` (opción múltiple, una
   oportunidad), `texto` (respuesta escrita con `normalizarTexto`). Los tipos

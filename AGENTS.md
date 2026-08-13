@@ -80,7 +80,7 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
   inferior; en escritorio (`@media min-width: 900px`) `main` se amplía a
   `1080px`, los mazos van en grid de varias columnas, la barra inferior se
   oculta (navegación por el header) y el estudio/sheet/ajustes se centran. El
-  logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con raya verde,
+  logo oficial es `assets/icons/icon-192.png` (tarjeta blanca con rayo verde,
   PNG transparente) y se muestra en la cabecera de la app y en las 5 pantallas
   de cuenta (`logo-img`).
 
@@ -137,9 +137,11 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
       `ux_mode:'popup'` en Android/desktop (redirect solo iOS) para arreglar el
       Google login en PWA instalada (405/redirect_uri_mismatch).
 - [x] Fase 1 (2026-08-12): logo oficial regenerado como **PNG transparente**
-      (tarjeta blanca redondeada + raya verde diagonal) en `assets/icons/`
+      (tarjeta blanca redondeada + rayo verde) en `assets/icons/`
       (`icon-512`, `icon-192`, `favicon` 64); vuelto a integrar en las 5
       pantallas de cuenta (`logo-img`) y cabecera; SW a `mastercards-v5`.
+      (El mismo día se retoca el diseño: la banda diagonal se sustituye por un
+      **rayo verde** clásico; SW a `mastercards-v6`.)
 - [x] Fase 2 (2026-08-12): **tipos de tarjeta** (`tarjeta`, `abierta`,
       `opcion`, `texto`) en backend (columnas M/N + migración automática,
       `createCards_`/`editCard_`/`readTarjetas_`/`updateSRS_`) y frontend
