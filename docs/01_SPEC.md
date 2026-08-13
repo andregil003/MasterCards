@@ -83,3 +83,17 @@ con Google Sheets cuando hay red. Compartición de mazos por enlace (`?share=`).
 - 2026-08-12: Iconos FA por mazo Y por tarjeta (auto-hospedados).
 - 2026-08-12: Animaciones híbridas con ajuste de intensidad.
 - 2026-08-12: Columna `Explicacion` en Tarjetas + config "Revelar solución".
+- 2026-08-12: i18n ES/EN con diccionarios en `app.js` y `data-i18n`/`data-i18n-aria`
+  en el HTML; selector de idioma en Ajustes (persiste en `mc_settings.idioma`).
+  Default `auto` (idioma del navegador); decisión: cada dato vive en UN lugar
+  (diccionarios), el HTML solo referencia claves.
+- 2026-08-12: Instalación PWA con banner `beforeinstallprompt` (descartable, se
+  guarda en `mc_install_dismissed`) + botón "Instalar" en Ajustes; oculto si ya
+  está instalada (`display-mode: standalone`).
+- 2026-08-12: Bottom nav móvil (Inicio/Ajustes) reutilizando los handlers de
+  `btn-settings`/`btn-back` (sin duplicar lógica de navegación).
+- 2026-08-12: Botón "Copiar prompt" en creación de mazo: genera el prompt con el
+  nombre del mazo para que una IA devuelva el JSON y rellena el textarea.
+- 2026-08-12: Tests automatizados: `scripts/test.js` (lógica pura extraída del
+  propio `app.js`, incluye paridad de claves i18n y cobertura `data-i18n` del
+  HTML) y `scripts/smoke-test.ps1` (contrato de la Web App desplegada).

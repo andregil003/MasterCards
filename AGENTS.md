@@ -81,11 +81,29 @@ registra el cambio al final de `01_SPEC.md` (log de decisiones).
 - [x] Apps Script desplegado (URL: `https://script.google.com/macros/s/AKfycbxjPVGw74cBjuj_GDMxvW2-PzFDifoj4c_kOW-4KsSM6SKDxuJw_HIEEnrbfzL3xc4c/exec`)
 - [x] OAuth Client ID registrado (hecho: `830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com`)
 - [x] GitHub Pages activado (`https://andregil003.github.io/MasterCards/`)
-- [ ] Checklist de verificación (`docs/07_CHECKLIST.md`)
+- [x] Instalación PWA con banner `beforeinstallprompt` + botón en Ajustes
+- [x] Bottom nav (Inicio/Ajustes) en móvil; back header en escritorio
+- [x] i18n ES/EN (diccionarios en `app.js`, `data-i18n`/`data-i18n-aria` en HTML,
+      selector de idioma en Ajustes, persistencia en localStorage)
+- [x] Botón "Copiar prompt" para que una IA genere el JSON del mazo
+- [x] Tests automatizados (`node scripts/test.js`, `scripts/smoke-test.ps1`)
+- [x] Checklist de verificación (`docs/07_CHECKLIST.md`, con sección 7.8 de tests)
 
 ## 6. Cómo verificar tu trabajo
 
-- No existe lint ni test runner. Verificación manual: abrir `index.html` en un
-  navegador (con un servidor estático) y seguir `docs/07_CHECKLIST.md`.
+- **Tests de lógica (sin navegador):** `node scripts/test.js`. Extrae funciones
+  puras del propio `app.js` (SM-2, markdown, fechas, i18n) y verifica la paridad
+  de claves ES/EN y que todas las `data-i18n` del HTML existen en ambos idiomas.
+  Debe terminar con `PASS=… FAIL=0`.
+- **Smoke test del backend desplegado:** `powershell -ExecutionPolicy Bypass -File
+  scripts/smoke-test.ps1`. Comprueba el contrato JSON de la Web App (errores
+  `BAD_REQUEST`/`AUTH_FAILED`, share público) sin tocar datos reales. Lee la URL
+  desde `app.js`, así que nunca se desincroniza.
+- **Verificación manual:** abrir `index.html` en un navegador (servidor estático)
+  y seguir `docs/07_CHECKLIST.md`.
 - Cualquier cambio debe mantener la app funcionando 100% offline tras el primer
   arranque online (SW + localStorage).
+- Tras cambiar texto de la UI, añadir la clave en AMBOS diccionarios (`es` y `en`)
+  de `app.js`; `node scripts/test.js` fallará si se te olvida.
+- Tras cambiar `sw.js`, incrementar `CACHE` para que la versión nueva llegue a los
+  clientes instalados.

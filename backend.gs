@@ -176,7 +176,12 @@ function processOperations_(email, ops) {
 function createDeck_(email, d) {
   var sheet = getMazos_();
   var data = sheet.getDataRange().getValues();
-  var row = findRow_(data, MAZOS.MAZO_ID, d.mazoId);
+  // Seguridad: la búsqueda SIEMPRE filtra por email. Si el mazo existe pero
+  // pertenece a otro usuario, se rechaza (no se sobrescriben datos ajenos).
+  var row = findRow_(data, MAZOS.MAZO_ID, d.mazoId, email);
+  if (row === 0 && findRow_(data, MAZOS.MAZO_ID, d.mazoId) > 0) {
+    throw new Error('Mazo perteneciente a otro usuario: ' + d.mazoId);
+  }
   var now = Date.now();
   var valores = [
     d.mazoId, email, d.nombre || 'Sin nombre', d.icono || 'layer-group',
@@ -245,6 +250,10 @@ function reorderDecks_(email, d) {
 
 /** UPSERT de tarjetas en lote (createCards). data: { mazoId, tarjetas: [...] } */
 function createCards_(email, d) {
+  // Seguridad: solo se permiten tarjetas en mazos del propio usuario.
+  if (findMazoRow_(email, d.mazoId) < 0) {
+    throw new Error('Mazo no encontrado: ' + d.mazoId);
+  }
   var sheet = getTarjetas_();
   var data = sheet.getDataRange().getValues();
   var creadas = 0;
@@ -334,7 +343,7 @@ function deleteCard_(email, d) {
 function getUserData_(email) {
   var mazos = readMazos_(email);
   var mazoIds = mazos.map(function (m) { return String(m.mazoId); });
-  var tarjetas = mazoIds.length ? readTarjetas_(mazoIds) : [];
+  var tarjetas = mazoIds.length ? readTarjetas_(mazoIds, email) : [];
   return { email: email, decks: mazos, cards: tarjetas };
 }
 
@@ -362,12 +371,13 @@ function readMazos_(email) {
   return out;
 }
 
-function readTarjetas_(mazoIds) {
+function readTarjetas_(mazoIds, email) {
   var data = getTarjetas_().getDataRange().getValues();
   var out = [];
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
     if (mazoIds.indexOf(String(r[TARJETAS.MAZO_ID - 1])) === -1) continue;
+    if (email && String(r[TARJETAS.EMAIL - 1]).toLowerCase() !== email) continue;
     out.push({
       id: String(r[TARJETAS.ID - 1]),
       mazoId: String(r[TARJETAS.MAZO_ID - 1]),
@@ -509,9 +519,4 @@ function setup() {
   ensureDataStore_();
   Logger.log('Base de datos lista: ' +
     SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty(SS_PROP_KEY)).getUrl());
-}
-
-/** Devuelve un token de prueba para depurar (solo para el dueño del script). */
-function debugToken() {
-  return ScriptApp.getOAuthToken();
 }

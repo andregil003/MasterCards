@@ -16,15 +16,15 @@
 
   <!-- ===== Cabecera (dashboard y estudio) ===== -->
   <header id="app-header" class="app-header hidden" hidden>
-    <button id="btn-back" class="icon-btn" aria-label="Volver" hidden>
+    <button id="btn-back" class="icon-btn" aria-label="Volver" hidden data-i18n-aria="back">
       <i class="fa-solid fa-arrow-left"></i>
     </button>
     <h1 id="header-title">MasterCards</h1>
     <div class="header-actions">
-      <span id="sync-indicator" class="sync-indicator" title="Estado de sincronización">
+      <span id="sync-indicator" class="sync-indicator" title="">
         <i class="fa-solid fa-cloud"></i>
       </span>
-      <button id="btn-settings" class="icon-btn" aria-label="Ajustes">
+      <button id="btn-settings" class="icon-btn" aria-label="Ajustes" data-i18n-aria="settings">
         <i class="fa-solid fa-gear"></i>
       </button>
     </div>
@@ -37,7 +37,7 @@
       <div class="login-wrap">
         <div class="logo">MC</div>
         <h2>MasterCards</h2>
-        <p class="muted">Tus flashcards, siempre contigo.<br />Inicia sesión con Google para sincronizar.</p>
+        <p class="muted login-sub" data-i18n="login_sub">Tus flashcards, siempre contigo.<br />Inicia sesión con Google para sincronizar.</p>
         <div id="g_id_onload" data-auto_select="false"></div>
         <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black"
              data-text="continue_with" data-size="large" data-width="260"></div>
@@ -50,31 +50,42 @@
       <div class="toolbar">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input id="search-input" type="search" placeholder="Buscar mazos…" autocomplete="off" />
+          <input id="search-input" type="search" placeholder="Buscar mazos…" autocomplete="off"
+                 data-i18n-placeholder="search_placeholder" />
         </div>
         <div class="filters" id="filters">
-          <button class="chip" data-filter="vencidas">Vencidas</button>
-          <button class="chip" data-filter="nuevas">Nuevas</button>
-          <button class="chip" data-filter="favoritas">Favoritas</button>
+          <button class="chip" data-filter="vencidas" data-i18n="filter_due">Vencidas</button>
+          <button class="chip" data-filter="nuevas" data-i18n="filter_new">Nuevas</button>
+          <button class="chip" data-filter="favoritas" data-i18n="filter_fav">Favoritas</button>
         </div>
         <div class="dash-actions">
           <button id="btn-study-today" class="btn primary">
-            <i class="fa-solid fa-graduation-cap"></i> Estudiar Hoy
+            <i class="fa-solid fa-graduation-cap"></i> <span data-i18n="study_today">Estudiar Hoy</span>
           </button>
-          <button id="btn-sort-toggle" class="btn ghost" title="Cambiar orden">
-            <i class="fa-solid fa-arrow-down-a-z"></i> Alfabético
+          <button id="btn-sort-toggle" class="btn ghost" title="">
+            <i class="fa-solid fa-arrow-down-a-z"></i> <span id="sort-toggle-label" data-i18n="sort_alpha">Alfabético</span>
           </button>
         </div>
+      </div>
+
+      <!-- Banner de instalación PWA (se muestra solo si es instalable) -->
+      <div id="install-banner" class="install-banner hidden" hidden>
+        <i class="fa-solid fa-circle-down"></i>
+        <span class="install-banner-text" data-i18n="install_banner">Instala MasterCards en tu dispositivo</span>
+        <button id="btn-install-banner" class="btn primary small-btn" data-i18n="install_now">Instalar</button>
+        <button id="btn-install-dismiss" class="icon-btn" aria-label="Descartar" data-i18n-aria="install_dismiss">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <div id="deck-list" class="deck-list"></div>
       <div id="dashboard-empty" class="empty hidden">
         <i class="fa-solid fa-layer-group"></i>
-        <p>No hay mazos todavía.</p>
-        <p class="muted">Toca <i class="fa-solid fa-plus"></i> para crear el primero.</p>
+        <p data-i18n="empty_decks">No hay mazos todavía.</p>
+        <p class="muted" data-i18n="empty_decks_hint">Toca el botón + para crear el primero.</p>
       </div>
 
-      <button id="fab" class="fab" aria-label="Crear mazo">
+      <button id="fab" class="fab" aria-label="Crear mazo" data-i18n-aria="create_deck">
         <i class="fa-solid fa-plus"></i>
       </button>
     </section>
@@ -82,44 +93,51 @@
     <!-- ===== CREAR MAZO (bottom sheet) ===== -->
     <section class="screen sheet" data-screen="crearMazo" hidden>
       <div class="sheet-header">
-        <h2>Crear mazo</h2>
-        <button class="icon-btn" data-close-sheet aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+        <h2 data-i18n="create_deck">Crear mazo</h2>
+        <button class="icon-btn" data-close-sheet aria-label="Cerrar" data-i18n-aria="close"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <label class="field-label">Nombre del mazo</label>
-      <input id="deck-name" class="input" type="text" maxlength="60" placeholder="Ej: Inglés Básico" />
+      <label class="field-label" data-i18n="deck_name">Nombre del mazo</label>
+      <input id="deck-name" class="input" type="text" maxlength="60" placeholder="Ej: Inglés Básico"
+             data-i18n-placeholder="deck_name_ph" />
 
-      <label class="field-label">Ícono</label>
+      <label class="field-label" data-i18n="icon_label">Ícono</label>
       <div id="deck-icon-picker" class="icon-picker"></div>
 
-      <label class="field-label">Color de acento</label>
+      <label class="field-label" data-i18n="color_label">Color de acento</label>
       <div id="deck-color-picker" class="color-picker"></div>
 
       <div class="tabs">
-        <button id="tab-json" class="tab active">Pegar JSON</button>
-        <button id="tab-single" class="tab">Tarjeta individual</button>
+        <button id="tab-json" class="tab active" data-i18n="tab_json">Pegar JSON</button>
+        <button id="tab-single" class="tab" data-i18n="tab_single">Tarjeta individual</button>
       </div>
+
+      <button id="btn-copy-prompt" class="btn ghost block prompt-btn">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span data-i18n="copy_prompt">Copiar prompt para IA</span>
+      </button>
 
       <!-- Modo JSON -->
       <div id="panel-json">
-        <label class="field-label">JSON de la IA <span class="muted">[{"q":"...","a":"...","e":"opcional"}]</span></label>
+        <label class="field-label" data-i18n="json_label">JSON de la IA <span class="muted">*</span></label>
         <textarea id="json-input" class="input textarea" rows="8"
-          placeholder='[{"q":"¿Qué significa PWA?","a":"Progressive Web App","e":"PWA = aplicación web instalable"},{"q":"2+2","a":"4"}]'></textarea>
+          placeholder='[{"q":"¿Qué significa PWA?","a":"Progressive Web App","e":"PWA = aplicación web instalable"},{"q":"2+2","a":"4"}]'
+          data-i18n-placeholder="json_ph"></textarea>
         <p id="json-feedback" class="muted small"></p>
       </div>
 
       <!-- Modo individual -->
       <div id="panel-single" hidden>
-        <label class="field-label">Pregunta</label>
+        <label class="field-label" data-i18n="question_label">Pregunta</label>
         <textarea id="single-q" class="input textarea" rows="2"></textarea>
-        <label class="field-label">Respuesta</label>
+        <label class="field-label" data-i18n="answer_label">Respuesta</label>
         <textarea id="single-a" class="input textarea" rows="2"></textarea>
-        <label class="field-label">Explicación (¿por qué?) <span class="muted">opcional</span></label>
+        <label class="field-label"><span data-i18n="explanation_label">Explicación (¿por qué?)</span> <span class="muted" data-i18n="optional">opcional</span></label>
         <textarea id="single-e" class="input textarea" rows="2"></textarea>
       </div>
 
       <button id="btn-create-deck" class="btn primary block">
-        <i class="fa-solid fa-plus"></i> Crear mazo
+        <i class="fa-solid fa-plus"></i> <span data-i18n="create_btn">Crear mazo</span>
       </button>
     </section>
 
@@ -132,11 +150,11 @@
 
       <div id="study-empty" class="empty hidden">
         <i class="fa-solid fa-calendar-check"></i>
-        <p id="study-empty-text">¡Nada pendiente por hoy!</p>
+        <p id="study-empty-text"></p>
       </div>
 
       <div id="study-area" hidden>
-        <div id="flashcard" class="flashcard" role="button" tabindex="0" aria-label="Dar la vuelta a la tarjeta">
+        <div id="flashcard" class="flashcard" role="button" tabindex="0" aria-label="Dar la vuelta a la tarjeta" data-i18n-aria="flip_hint">
           <div class="card-inner">
             <div class="card-face card-front">
               <i id="card-icon" class="fa-solid fa-bolt card-deco"></i>
@@ -145,36 +163,36 @@
             <div class="card-face card-back">
               <div id="card-a" class="card-content markdown"></div>
               <div id="card-e" class="card-why" hidden>
-                <div class="why-title"><i class="fa-solid fa-circle-question"></i> ¿Por qué?</div>
+                <div class="why-title"><i class="fa-solid fa-circle-question"></i> <span data-i18n="why">¿Por qué?</span></div>
                 <div id="card-e-text" class="markdown"></div>
               </div>
             </div>
           </div>
           <div class="card-tools">
-            <button id="btn-fav-card" class="tool-btn" aria-label="Marcar como favorita"><i class="fa-regular fa-star"></i></button>
-            <button id="btn-edit-card" class="tool-btn" aria-label="Editar tarjeta"><i class="fa-solid fa-pen"></i></button>
-            <button id="btn-del-card" class="tool-btn danger" aria-label="Borrar tarjeta"><i class="fa-solid fa-trash"></i></button>
+            <button id="btn-fav-card" class="tool-btn" aria-label="Marcar como favorita" data-i18n-aria="fav_aria"><i class="fa-regular fa-star"></i></button>
+            <button id="btn-edit-card" class="tool-btn" aria-label="Editar tarjeta" data-i18n-aria="edit_aria"><i class="fa-solid fa-pen"></i></button>
+            <button id="btn-del-card" class="tool-btn danger" aria-label="Borrar tarjeta" data-i18n-aria="delete_aria"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
 
         <div id="edit-panel" class="edit-panel" hidden>
-          <label class="field-label">Pregunta</label>
+          <label class="field-label" data-i18n="question_label">Pregunta</label>
           <textarea id="edit-q" class="input textarea" rows="3"></textarea>
-          <label class="field-label">Respuesta</label>
+          <label class="field-label" data-i18n="answer_label">Respuesta</label>
           <textarea id="edit-a" class="input textarea" rows="3"></textarea>
-          <label class="field-label">Explicación <span class="muted">opcional</span></label>
+          <label class="field-label"><span data-i18n="explanation_label">Explicación</span> <span class="muted" data-i18n="optional">opcional</span></label>
           <textarea id="edit-e" class="input textarea" rows="2"></textarea>
           <div class="row-gap">
-            <button id="btn-save-edit" class="btn primary"><i class="fa-solid fa-check"></i> Guardar</button>
-            <button id="btn-cancel-edit" class="btn ghost">Cancelar</button>
+            <button id="btn-save-edit" class="btn primary"><i class="fa-solid fa-check"></i> <span data-i18n="save">Guardar</span></button>
+            <button id="btn-cancel-edit" class="btn ghost" data-i18n="cancel">Cancelar</button>
           </div>
         </div>
 
         <div id="srs-buttons" class="srs-row">
-          <button class="srs srs-again" data-q="1"><i class="fa-solid fa-rotate-left"></i><span>Otra vez</span></button>
-          <button class="srs srs-hard"  data-q="3"><i class="fa-solid fa-angles-down"></i><span>Difícil</span></button>
-          <button class="srs srs-good"  data-q="4"><i class="fa-solid fa-circle-check"></i><span>Bien</span></button>
-          <button class="srs srs-easy"  data-q="5"><i class="fa-solid fa-bolt"></i><span>Fácil</span></button>
+          <button class="srs srs-again" data-q="1"><i class="fa-solid fa-rotate-left"></i><span data-i18n="again">Otra vez</span></button>
+          <button class="srs srs-hard"  data-q="3"><i class="fa-solid fa-angles-down"></i><span data-i18n="hard">Difícil</span></button>
+          <button class="srs srs-good"  data-q="4"><i class="fa-solid fa-circle-check"></i><span data-i18n="good">Bien</span></button>
+          <button class="srs srs-easy"  data-q="5"><i class="fa-solid fa-bolt"></i><span data-i18n="easy">Fácil</span></button>
         </div>
       </div>
     </section>
@@ -182,61 +200,76 @@
     <!-- ===== RESUMEN ===== -->
     <section class="screen" data-screen="resumen" hidden>
       <div class="summary-stats">
-        <div class="stat"><span id="sum-vistas">0</span><label>Vistas</label></div>
-        <div class="stat"><span id="sum-aciertos">0</span><label>Aciertos</label></div>
-        <div class="stat"><span id="sum-pct">0%</span><label>Correcto</label></div>
-        <div class="stat"><span id="sum-tiempo">0s</span><label>Tiempo</label></div>
+        <div class="stat"><i class="fa-solid fa-eye"></i><span id="sum-vistas">0</span><label data-i18n="viewed">Vistas</label></div>
+        <div class="stat"><i class="fa-solid fa-circle-check"></i><span id="sum-aciertos">0</span><label data-i18n="correct">Aciertos</label></div>
+        <div class="stat"><i class="fa-solid fa-percent"></i><span id="sum-pct">0%</span><label data-i18n="accuracy">Correcto</label></div>
+        <div class="stat"><i class="fa-solid fa-clock"></i><span id="sum-tiempo">0s</span><label data-i18n="time">Tiempo</label></div>
       </div>
 
       <div class="filters">
-        <button class="chip active" data-summary-filter="falladas">Falladas</button>
-        <button class="chip" data-summary-filter="correctas">Correctas</button>
-        <button class="chip" data-summary-filter="todas">Todas</button>
+        <button class="chip active" data-summary-filter="falladas" data-i18n="failed">Falladas</button>
+        <button class="chip" data-summary-filter="correctas" data-i18n="correct_pl">Correctas</button>
+        <button class="chip" data-summary-filter="todas" data-i18n="all">Todas</button>
       </div>
       <div id="summary-list" class="summary-list"></div>
 
       <div class="row-gap">
-        <button id="btn-again-failed" class="btn primary"><i class="fa-solid fa-rotate-left"></i> Repasar falladas</button>
-        <button id="btn-summary-close" class="btn ghost">Volver al inicio</button>
+        <button id="btn-again-failed" class="btn primary"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="review_failed">Repasar falladas</span></button>
+        <button id="btn-summary-close" class="btn ghost" data-i18n="back_home">Volver al inicio</button>
       </div>
     </section>
 
     <!-- ===== AJUSTES ===== -->
     <section class="screen" data-screen="ajustes" hidden>
-      <h2>Ajustes</h2>
+      <h2 data-i18n="settings">Ajustes</h2>
 
-      <label class="field-label">Tema</label>
+      <label class="field-label" data-i18n="language">Idioma</label>
+      <div class="segmented" id="seg-idioma">
+        <button data-value="auto" data-i18n="language_auto">Auto</button>
+        <button data-value="es">Español</button>
+        <button data-value="en">English</button>
+      </div>
+
+      <label class="field-label" data-i18n="theme">Tema</label>
       <div class="segmented" id="seg-tema">
-        <button data-value="auto">Auto</button>
-        <button data-value="claro">Claro</button>
-        <button data-value="oscuro">Oscuro</button>
+        <button data-value="auto" data-i18n="theme_auto">Auto</button>
+        <button data-value="claro" data-i18n="theme_light">Claro</button>
+        <button data-value="oscuro" data-i18n="theme_dark">Oscuro</button>
       </div>
 
-      <label class="field-label">Animaciones</label>
+      <label class="field-label" data-i18n="animations">Animaciones</label>
       <div class="segmented" id="seg-anim">
-        <button data-value="sutil">Sutil</button>
-        <button data-value="hibrido">Híbrido</button>
-        <button data-value="vistoso">Vistoso</button>
+        <button data-value="sutil" data-i18n="anim_sutil">Sutil</button>
+        <button data-value="hibrido" data-i18n="anim_hibrido">Híbrido</button>
+        <button data-value="vistoso" data-i18n="anim_vistoso">Vistoso</button>
       </div>
 
-      <label class="field-label">Revelar solución</label>
+      <label class="field-label" data-i18n="reveal">Revelar solución</label>
       <div class="segmented" id="seg-revelar">
-        <button data-value="fallar">Al fallar</button>
-        <button data-value="final">Al final</button>
+        <button data-value="fallar" data-i18n="reveal_fail">Al fallar</button>
+        <button data-value="final" data-i18n="reveal_end">Al final</button>
       </div>
 
       <label class="field-label">
-        Límite diario de nuevas: <span id="limite-val">20</span>
+        <span data-i18n="daily_limit_label">Límite diario de nuevas:</span> <span id="limite-val">20</span>
       </label>
       <input id="limite-slider" type="range" min="5" max="100" step="5" value="20" />
 
       <div class="row-gap">
-        <button id="btn-export" class="btn ghost"><i class="fa-solid fa-file-export"></i> Exportar datos</button>
-        <button id="btn-wipe" class="btn danger-ghost"><i class="fa-solid fa-trash"></i> Borrar datos locales</button>
+        <button id="btn-export" class="btn ghost"><i class="fa-solid fa-file-export"></i> <span data-i18n="export">Exportar datos</span></button>
+        <button id="btn-wipe" class="btn danger-ghost"><i class="fa-solid fa-trash"></i> <span data-i18n="wipe">Borrar datos locales</span></button>
       </div>
-      <button id="btn-logout" class="btn danger-ghost block"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+
+      <button id="btn-install" class="btn ghost block"><i class="fa-solid fa-circle-down"></i> <span data-i18n="install_btn">Instalar app</span></button>
+      <button id="btn-logout" class="btn danger-ghost block"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">Cerrar sesión</span></button>
     </section>
   </main>
+
+  <!-- ===== Barra de navegación inferior (Inicio / Ajustes) ===== -->
+  <nav id="bottom-nav" class="bottom-nav hidden" hidden>
+    <button id="nav-home" class="nav-btn active"><i class="fa-solid fa-house"></i><span data-i18n="home">Inicio</span></button>
+    <button id="nav-settings" class="nav-btn"><i class="fa-solid fa-gear"></i><span data-i18n="settings">Ajustes</span></button>
+  </nav>
 
   <div id="toast" class="toast hidden"></div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
@@ -245,8 +278,8 @@
       <h3 id="modal-title"></h3>
       <p id="modal-text"></p>
       <div class="row-gap">
-        <button id="modal-cancel" class="btn ghost">Cancelar</button>
-        <button id="modal-ok" class="btn primary">Aceptar</button>
+        <button id="modal-cancel" class="btn ghost" data-i18n="cancel">Cancelar</button>
+        <button id="modal-ok" class="btn primary" data-i18n="accept">Aceptar</button>
       </div>
     </div>
   </div>

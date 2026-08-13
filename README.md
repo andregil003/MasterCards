@@ -10,7 +10,7 @@ JS, con **Google Apps Script + Google Sheets** como backend.
 - **Compartir mazos** por enlace (`?share=<ID>`).
 - **Font Awesome auto-hospedado** (funciona 100% offline), sin emojis en la UI.
 - Dark mode nativo + animaciones configurables (sutil/híbrido/vistoso).
-- 100% en español.
+- **Bilingüe ES/EN** (selector en Ajustes) e **instalable** (PWA con banner).
 
 ## ⚙️ Arquitectura
 
@@ -66,6 +66,23 @@ npx serve .   # o cualquier servidor estático (https necesario para SW)
 
 Nota: el Service Worker y el login de Google requieren HTTPS o `localhost`.
 
+## ✅ Tests
+
+- **Lógica pura (SM-2, markdown, fechas, i18n)** sin navegador:
+
+  ```powershell
+  node scripts/test.js
+  ```
+
+  Extrae las funciones reales de `app.js` y verifica que las claves ES/EN de los
+  diccionarios y todos los `data-i18n` del HTML existen en ambos idiomas.
+- **Contrato del backend desplegado** (solo lecturas con tokens inválidos, no
+  toca datos):
+
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
+  ```
+
 ---
 
-**Config actual**: `SCRIPT_URL` pendiente (esperando la URL `/exec` de tu deploy).
+**App en producción**: https://andregil003.github.io/MasterCards/

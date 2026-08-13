@@ -49,10 +49,17 @@
 - [ ] Resumen final: filtros Todas/Correctas/Falladas + "Repasar falladas".
 - [ ] Ajustes: tema (auto/claro/oscuro), animaciones, revelar solución, límite,
       exportar JSON, borrar datos, cerrar sesión.
+- [ ] Selector de idioma (ES/EN): cambia toda la UI al instante y persiste.
+- [ ] "Copiar prompt" en creación de mazo: genera el prompt para que una IA
+      devuelva el JSON y al pegarlo se rellena el textarea.
+- [ ] Barra inferior (Inicio/Ajustes) en móvil; botón de ajustes en header en
+      escritorio; back funciona.
 
 ## 7.6 PWA
 
 - [ ] Instalable (icono en la barra del navegador, `display: standalone`).
+- [ ] Banner "Instalar" aparece con `beforeinstallprompt` (descartable) y el botón
+      "Instalar" de Ajustes llama al prompt; con la app ya instalada no se muestra.
 - [ ] Después del primer arranque online, abrir sin red carga el app shell + FA.
 - [ ] Nueva versión: se instala y recarga automáticamente solo si la cola está vacía.
 
@@ -62,3 +69,12 @@
 - [ ] `GET ?share_id` devuelve el mazo público sin auth.
 - [ ] `POST` con `text/plain` procesa ops y responde `results`.
 - [ ] Las hojas `Mazos`/`Tarjetas` se crean solas en el primer uso.
+
+## 7.8 Tests automáticos
+
+> La sección 7.8 se comprueba sin navegador. El resto es manual.
+
+- [ ] `node scripts/test.js` → termina con `FAIL=0` (SM-2, markdown, fechas,
+      i18n, paridad de claves y cobertura `data-i18n` del HTML).
+- [ ] `powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1` →
+      `Smoke test OK` (contrato JSON del backend desplegado).
