@@ -6,16 +6,15 @@
  *  cache-first. Las navegaciones usan network-first con fallback
  *  al índice (para que rutas offline sigan abriendo la app).
  *
- *  ACTUALIZACIÓN AUTOMÁTICA CONDICIONAL:
- *  Solo aplica `skipWaiting()` (y recarga) si la cola de
- *  sincronización (mc_syncQueue) está vacía. Si hay operaciones
- *  offline pendientes, esperamos: una recarga en mitad de una
- *  sync podría perder cambios. La nueva versión queda en
- *  "waiting" y se activará en la próxima oportunidad.
+ *  ACTUALIZACIÓN AUTOMÁTICA:
+ *  skipWaiting() en install + clients.claim() en activate para
+ *  que la nueva versión tome control de inmediato. La cola de
+ *  sincronización (mc_syncQueue) persiste en localStorage y no
+ *  se ve afectada por el cambio de SW.
  * ============================================================
  */
 
-const CACHE = 'mastercards-v8';
+const CACHE = 'mastercards-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -54,16 +53,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) => Promise.all(keys
         .filter((key) => key !== CACHE)
         .map((key) => caches.delete(key))))
-      .then(() => {
-        // Si hay cambios offline pendientes, no recargamos las pestañas.
-        let pending = 0;
-        try {
-          pending = JSON.parse(localStorage.getItem('mc_syncQueue') || '[]').length;
-        } catch (e) { pending = 0; }
-        if (pending === 0) {
-          return self.clients.claim();
-        }
-      })
+      .then(() => self.clients.claim())
   );
 });
 

@@ -73,7 +73,7 @@ export var Auth = {
       params.delete('credential');
       history.replaceState({}, '', location.pathname + (params.toString() ? '?' + params : ''));
     }
-    window._mc_window._mc_startApp();
+    window._mc_startApp();
   },
 
   getToken: function () {

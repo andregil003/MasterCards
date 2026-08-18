@@ -987,3 +987,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px;
 
   #ajustes { max-width: 640px; margin: 0 auto; }
 }
+
+/* ---------- Version badge ---------- */
+.version-badge {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.5;
+  margin-top: 24px;
+  padding-bottom: env(safe-area-inset-bottom);
+}

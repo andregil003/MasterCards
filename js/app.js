@@ -12,7 +12,16 @@ import { t, toast, bindModal, bindNameModal, initPasswordToggles, renderGreeting
 import { pwa, isStandalone } from './pwa.js';
 import { I18N } from './i18n.js';
 import { initAuthScreens, updateSecurityUI } from './auth.js';
-import { K } from './config.js';
+import { CONFIG, K } from './config.js';
+
+/** Set version badge text on login and settings screens. */
+function renderVersionBadge() {
+  var v = 'v' + CONFIG.VERSION;
+  var el1 = document.getElementById('version-login');
+  var el2 = document.getElementById('version-settings');
+  if (el1) el1.textContent = v;
+  if (el2) el2.textContent = v;
+}
 
 /** Función global que GIS llama tras la redirección de login. */
 window.handleCredentialResponse = function (response) {
@@ -95,6 +104,7 @@ function initPromptCopy() {
 // ------------------------------------------------------------------
 function boot() {
   Store.load();
+  renderVersionBadge();
   UI.applySettings();
   UI.initCreateDeck();
   UI.initSettings();

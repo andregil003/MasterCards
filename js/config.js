@@ -4,6 +4,7 @@
  * ============================================================ */
 
 export var CONFIG = {
+  VERSION: '1.1.0',
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxjPVGw74cBjuj_GDMxvW2-PzFDifoj4c_kOW-4KsSM6SKDxuJw_HIEEnrbfzL3xc4c/exec',
   GOOGLE_CLIENT_ID: '830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com',
   MAX_OPS_PER_SYNC: 100,
