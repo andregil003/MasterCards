@@ -5,7 +5,7 @@
  * ============================================================
  *  Uso:  node scripts/test.js   (o  npm test si añades scripts)
  *
- *  Extrae del propio app.js las funciones puras (sm2, md, esc,
+ *  Extrae de los módulos js/ las funciones puras (sm2, md, esc,
  *  uuid, fechas, I18N…) y las evalúa en un contexto Node, así
  *  los tests SIEMPRE reflejan el código real desplegado.
  *
@@ -18,9 +18,21 @@ const vm = require('vm');
 const path = require('path');
 const crypto = require('crypto');
 
-const APP = path.join(__dirname, '..', 'app.js');
+const JS_DIR = path.join(__dirname, '..', 'js');
 const INDEX = path.join(__dirname, '..', 'index.html');
-const src = fs.readFileSync(APP, 'utf8');
+
+// Leer todos los módulos js/ y concatenarlos (orden alfabético para consistencia)
+const src = fs.readdirSync(JS_DIR)
+  .filter(f => f.endsWith('.js'))
+  .sort()
+  .map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8'))
+  .join('\n');
+
+// Eliminar sintaxis ES module para que el vm pueda ejecutar el código
+const srcClean = src
+  .replace(/^export\s+/gm, '')
+  .replace(/^import\s+.*$/gm, '');
+
 const html = fs.readFileSync(INDEX, 'utf8');
 
 // ------------------------------------------------------------------
@@ -42,15 +54,15 @@ function extractBlock(pattern, code) {
 }
 
 function extractFn(name) {
-  return extractBlock('function ' + name + '\\b[^{]*\\{', src);
+  return extractBlock('function ' + name + '\\b[^{]*\\{', srcClean);
 }
 
 const FUNCS = ['esc', 'md', 'todayStart', 'todayKey', 'fmtShort', 'uuid', 'sm2', 'esNueva', 'estaVencida', 't', 'validarPasswordMC', 'normalizarTexto', 'normalizarOpciones', 'parseLineasOpciones', 'opcionesParaEditar', 'parseEntero', 'respuestaNumValida', 'tipoUsaOpciones', 'tipoAuto', 'saludoDeLaHora'];
-const CONFIG_BLOCK = /var CONFIG = \{[\s\S]*?\n\};/.exec(src)[0];
-const I18N_BLOCK = extractBlock('var I18N = \\{', src);
-// Regex de las cuentas MC (declaradas como var en app.js)
-const USERNAME_RE_BLOCK = /var USERNAME_RE = \S+;/.exec(src)[0];
-const TOTP_RE_BLOCK = /var TOTP_RE = \S+;/.exec(src)[0];
+const CONFIG_BLOCK = /var CONFIG = \{[\s\S]*?\n\};/.exec(srcClean)[0];
+const I18N_BLOCK = extractBlock('var I18N = \\{', srcClean);
+// Regex de las cuentas MC (declaradas como var en los módulos)
+const USERNAME_RE_BLOCK = /var USERNAME_RE = \S+;/.exec(srcClean)[0];
+const TOTP_RE_BLOCK = /var TOTP_RE = \S+;/.exec(srcClean)[0];
 
 const ctx = { window: { crypto: undefined }, Math, Date, String, console, Object };
 vm.createContext(ctx);

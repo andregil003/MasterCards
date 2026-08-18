@@ -6,10 +6,10 @@
 # ============================================================
 
 $ErrorActionPreference = 'Stop'
-$app = Join-Path $PSScriptRoot '..\app.js'
+$app = Join-Path $PSScriptRoot '..\js\config.js'
 $src = Get-Content -LiteralPath $app -Raw
 
-# Extrae la URL real desde app.js (fuente única de verdad)
+# Extrae la URL real desde js/config.js (fuente única de verdad)
 $mUrl = [regex]::Match($src, "SCRIPT_URL:\s*'([^']+)'")
 $mCid = [regex]::Match($src, "GOOGLE_CLIENT_ID:\s*'([^']+)'")
 if (-not $mUrl.Success) { Write-Host 'No se pudo leer SCRIPT_URL de app.js' -ForegroundColor Red; exit 1 }

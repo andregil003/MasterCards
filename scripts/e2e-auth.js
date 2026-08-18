@@ -13,10 +13,10 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// --- URL del backend, leída de app.js (igual que el smoke test) ---
-const appSrc = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-const urlMatch = appSrc.match(/SCRIPT_URL\s*[:=]\s*['"]([^'"]+)['"]/);
-if (!urlMatch) { console.error('No encuentro SCRIPT_URL en app.js'); process.exit(1); }
+// --- URL del backend, leída de js/config.js ---
+const configSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'config.js'), 'utf8');
+const urlMatch = configSrc.match(/SCRIPT_URL\s*[:=]\s*['"]([^'"]+)['"]/);
+if (!urlMatch) { console.error('No encuentro SCRIPT_URL en js/config.js'); process.exit(1); }
 const SCRIPT_URL = urlMatch[1];
 
 // --- Helpers cripto (espejo del backend.gs) ---

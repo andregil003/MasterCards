@@ -15,12 +15,21 @@
  * ============================================================
  */
 
-const CACHE = 'mastercards-v7';
+const CACHE = 'mastercards-v8';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './app.js',
+  './js/app.js',
+  './js/config.js',
+  './js/i18n.js',
+  './js/utils.js',
+  './js/store.js',
+  './js/auth.js',
+  './js/sync-engine.js',
+  './js/srs.js',
+  './js/ui.js',
+  './js/pwa.js',
   './manifest.json',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',

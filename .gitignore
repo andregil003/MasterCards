@@ -5,10 +5,22 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+.opencode/
 
 # Logs
 *.log
 
 # Secrets (nunca subir)
 .env
+.env.*
 *.local
+
+# Dependencies (si algún día se usa npm)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Documentation (interna, no para el repo)
+docs/
