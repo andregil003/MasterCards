@@ -3,11 +3,12 @@
  *  Sesión Google (GIS) o cuenta MasterCards (usuario+contraseña).
  * ============================================================ */
 
-import { CONFIG } from './config.js';
+import { CONFIG, K, SESSION_TTL } from './config.js';
 import { Store } from './store.js';
 import { t } from './i18n.js';
 import { toast, esc, copyText, downloadJSON } from './utils.js';
 import { show } from './ui.js';
+import { generateQR } from './qr.js';
 
 // ------------------------------------------------------------------
 // Auth — sesión
@@ -31,6 +32,13 @@ export var Auth = {
   init: function () {
     var u = Store.getMcUsername(), tk = Store.getMcToken();
     if (u && tk) {
+      var ts = Store.getSessionTs();
+      if (ts && Date.now() - ts > SESSION_TTL) {
+        Store.setMcAuth('', '');
+        Auth.mode = 'google';
+        Auth.initGoogle();
+        return;
+      }
       Auth.mode = 'mc';
       Auth.token = tk;
       Auth.tokenExp = 0;
@@ -129,7 +137,10 @@ export var Auth = {
   }
 };
 
-/** Decodifica el payload de un JWT (base64url) sin validar firma (solo lectura). */
+/** Decodifica el payload de un JWT (base64url) sin validar firma (solo lectura).
+ *  El token se envía al backend para verificación real; aquí solo extraemos
+ *  el email y la expiración para la UI. NUNCA confíes de este decode para
+ *  autorización — la validación siempre ocurre en el servidor. */
 export function decodeJwt(jwt) {
   var parts = jwt.split('.');
   var b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -238,8 +249,8 @@ function enterTotpLogin() {
 function enterTotpSetup(td) {
   setTotpMode('setup');
   if (td && td.otpauth) {
-    document.getElementById('totp-qr-img').src =
-      'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(td.otpauth);
+    document.getElementById('totp-qr-img').outerHTML =
+      '<img id="totp-qr-img" src="data:image/svg+xml,' + encodeURIComponent(generateQR(td.otpauth)) + '" alt="QR TOTP" width="280" height="280" />';
   }
   document.getElementById('totp-secret').value = (td && td.secret) || '';
   document.getElementById('app-header').classList.add('hidden');

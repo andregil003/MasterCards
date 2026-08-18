@@ -4,7 +4,7 @@
  * ============================================================ */
 
 export var CONFIG = {
-  VERSION: '1.1.0',
+  VERSION: '1.2.0',
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxjPVGw74cBjuj_GDMxvW2-PzFDifoj4c_kOW-4KsSM6SKDxuJw_HIEEnrbfzL3xc4c/exec',
   GOOGLE_CLIENT_ID: '830630854057-vaq4hic6p256qlmhoml90s78i3e9dqi0.apps.googleusercontent.com',
   MAX_OPS_PER_SYNC: 100,
@@ -35,12 +35,16 @@ export var K = {
   EMAIL: 'mc_email',
   MC_USERNAME: 'mc_username',
   MC_TOKEN: 'mc_apitoken',
+  SESSION_TS: 'mc_session_ts',
   DECKS: 'mc_decks',
   CARDS: 'mc_cards',
   QUEUE: 'mc_syncQueue',
   SETTINGS: 'mc_settings',
   META: 'mc_meta'
 };
+
+/** TTL de sesión MC: 24 horas. */
+export var SESSION_TTL = 24 * 60 * 60 * 1000;
 
 export var DEFAULT_SETTINGS = {
   tema: 'auto',

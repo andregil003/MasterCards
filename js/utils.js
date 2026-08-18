@@ -25,6 +25,16 @@ export function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/** Sanitiza un nombre de ícono FA: solo letras, números y guiones. */
+export function sanitizeIcon(s) {
+  return String(s || '').replace(/[^a-z0-9-]/gi, '').slice(0, 50);
+}
+
+/** Sanitiza un color hex: solo # seguido de 3-8 hex. */
+export function sanitizeColor(s) {
+  return String(s || '').replace(/[^#0-9a-fA-F]/g, '').slice(0, 10);
+}
+
 /** Convierte un color hex en rgba con la opacidad dada (para fondos suaves). */
 export function withAlpha(color, alpha) {
   var hex = String(color || '#22c55e').replace('#', '');

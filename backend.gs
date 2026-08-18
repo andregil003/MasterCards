@@ -53,7 +53,7 @@ var SHEET_NAME = 'MasterCards';
 var SS_PROP_KEY = 'SPREADSHEET_ID';
 
 // Parámetros de las cuentas MasterCards
-var PBKDF2_ITERACIONES = 10000;     // subible en el futuro (se guarda por fila)
+var PBKDF2_ITERACIONES = 50000;     // subible en el futuro (se guarda por fila)
 var MAX_INTENTOS = 5;               // intentos fallidos antes del bloqueo
 var BLOQUEO_MS = 15 * 60 * 1000;    // 15 minutos de bloqueo
 
@@ -119,29 +119,21 @@ var HEADERS = {
 
 /**
  * GET:
- *  ?email=<owner>&token=<token>  → pull completo (mazos + tarjetas).
- *    token = ID token de Google o API token de cuenta MasterCards.
- *  ?share_id=<mazoId>            → mazo público (solo lectura, sin auth).
+ *  ?share_id=<mazoId>  → mazo público (solo lectura, sin auth).
+ *  El pull de usuario se hizo via POST { "action": "pull", "token": "..." }
+ *  para evitar exponer el token en URLs de log/access.
  */
 function doGet(e) {
   try {
-    ensureDataStore_(); // crea la hoja de cálculo en el primer acceso
+    ensureDataStore_();
     var params = (e && e.parameter) || {};
     // --- Compartir: endpoint público de solo lectura ---
     if (params.share_id) {
       return jsonOk(getDeckPublic_(params.share_id));
     }
-    // --- Pull del usuario (requiere token verificado) ---
-    if (params.email && params.token) {
-      var email = verifyAnyToken_(params.token);
-      if (!email || email !== String(params.email).toLowerCase()) {
-        return jsonError('AUTH_FAILED', 'Token inválido o usuario no coincide');
-      }
-      return jsonOk(getUserData_(email));
-    }
-    return jsonError('BAD_REQUEST', 'Parámetros: ?email&token o ?share_id');
+    return jsonError('BAD_REQUEST', 'Parámetro: ?share_id');
   } catch (err) {
-    return jsonError('INTERNAL', String(err));
+    return jsonError('INTERNAL', 'Error interno del servidor');
   }
 }
 
@@ -150,10 +142,11 @@ function doGet(e) {
  *  Body (text/plain;charset=utf-8), dos formatos:
  *   - Auth de cuentas MC: { "action": "register|login|recover|totpSetup|changePassword|generateBackupCodes", ... }
  *   - Sincronización:      { "token": "<token>", "syncOperations": [...] }
+ *   - Pull completo:       { "action": "pull", "token": "<token>" }
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(20000); // evita colisiones entre sincronizaciones y registros
+  lock.waitLock(60000); // evita colisiones entre sincronizaciones y registros
   try {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
 
@@ -167,10 +160,11 @@ function doPost(e) {
       if (!body.token) return jsonError('AUTH_REQUIRED', 'Falta el token');
       var owner = verifyAnyToken_(body.token);
       if (!owner) return jsonError('AUTH_FAILED', 'Token inválido o expirado');
+      if (body.action === 'pull') return jsonOk(getUserData_(owner));
       if (body.action === 'totpSetup') return handleTotpSetup_(owner, body);
       if (body.action === 'changePassword') return handleChangePassword_(owner, body);
       if (body.action === 'generateBackupCodes') return handleGenerateBackupCodes_(owner);
-      return jsonError('BAD_REQUEST', 'Acción desconocida: ' + body.action);
+      return jsonError('BAD_REQUEST', 'Acción desconocida');
     }
 
     // ---- Sincronización (cola de operaciones offline) ----
@@ -191,7 +185,7 @@ function doPost(e) {
       results: results
     });
   } catch (err) {
-    return jsonError('INTERNAL', String(err));
+    return jsonError('INTERNAL', 'Error interno del servidor');
   } finally {
     lock.releaseLock();
   }
@@ -204,6 +198,7 @@ function doPost(e) {
 function handleRegister_(body) {
   ensureDataStore_();
   var username = normalizeUsername_(body.username);
+  if (!username || username.length < 3 || username.length > 32) return jsonError('INVALID_USERNAME', 'Usuario inválido');
   if (validarUsername_(username)) return jsonError('INVALID_USERNAME', 'Usuario inválido');
   if (validarPassword_(body.password)) return jsonError('WEAK_PASSWORD', 'La contraseña no cumple la política');
   if (findUserRow_(username) > 0) return jsonError('USERNAME_TAKEN', 'El usuario ya existe');
@@ -438,7 +433,7 @@ function processOperations_(email, ops) {
         default:              results.push({ opId: op.opId, ok: false, error: 'TIPO_DESCONOCIDO: ' + op.tipo });
       }
     } catch (err) {
-      results.push({ opId: op.opId, ok: false, error: String(err) });
+      results.push({ opId: op.opId, ok: false, error: 'Error procesando operación' });
     }
   }
   return results;
@@ -452,20 +447,23 @@ function createDeck_(email, d) {
   // pertenece a otro usuario, se rechaza (no se sobrescriben datos ajenos).
   var row = findRow_(data, MAZOS.MAZO_ID, d.mazoId, email);
   if (row === 0 && findRow_(data, MAZOS.MAZO_ID, d.mazoId) > 0) {
-    throw new Error('Mazo perteneciente a otro usuario: ' + d.mazoId);
+    throw new Error('Mazo perteneciente a otro usuario');
   }
+  var nombre = String(d.nombre || 'Sin nombre').slice(0, 200);
+  var icono = String(d.icono || 'layer-group').slice(0, 50);
+  var color = String(d.color || '#22c55e').slice(0, 20);
   var now = Date.now();
   var valores = [
-    d.mazoId, email, d.nombre || 'Sin nombre', d.icono || 'layer-group',
-    d.color || '#22c55e', d.orden != null ? d.orden : 0,
+    d.mazoId, email, nombre, icono,
+    color, d.orden != null ? d.orden : 0,
     d.creado || now, now, false
   ];
   if (row > 0) {
     // Ya existe (ej. operación reenviada): actualizar sólo campos editables
     var r = sheet.getRange(row, 1, 1, valores.length);
-    setCell_(r, MAZOS.NOMBRE, d.nombre || data[row - 1][MAZOS.NOMBRE - 1]);
-    setCell_(r, MAZOS.ICONO,  d.icono || data[row - 1][MAZOS.ICONO - 1]);
-    setCell_(r, MAZOS.COLOR,  d.color || data[row - 1][MAZOS.COLOR - 1]);
+    setCell_(r, MAZOS.NOMBRE, nombre || data[row - 1][MAZOS.NOMBRE - 1]);
+    setCell_(r, MAZOS.ICONO,  icono || data[row - 1][MAZOS.ICONO - 1]);
+    setCell_(r, MAZOS.COLOR,  color || data[row - 1][MAZOS.COLOR - 1]);
     setCell_(r, MAZOS.ORDEN,  d.orden != null ? d.orden : data[row - 1][MAZOS.ORDEN - 1]);
     setCell_(r, MAZOS.UPDATED_AT, now);
     setCell_(r, MAZOS.BORRADO, false);
@@ -478,11 +476,11 @@ function createDeck_(email, d) {
 /** Edición de metadatos de un mazo (nombre, ícono, color, orden). */
 function editDeck_(email, d) {
   var row = findMazoRow_(email, d.mazoId);
-  if (row < 0) throw new Error('Mazo no encontrado: ' + d.mazoId);
+  if (row < 0) throw new Error('Mazo no encontrado');
   var r = getMazos_().getRange(row, 1, 1, 9);
-  if (d.nombre != null) setCell_(r, MAZOS.NOMBRE, d.nombre);
-  if (d.icono != null) setCell_(r, MAZOS.ICONO, d.icono);
-  if (d.color != null) setCell_(r, MAZOS.COLOR, d.color);
+  if (d.nombre != null) setCell_(r, MAZOS.NOMBRE, String(d.nombre).slice(0, 200));
+  if (d.icono != null) setCell_(r, MAZOS.ICONO, String(d.icono).slice(0, 50));
+  if (d.color != null) setCell_(r, MAZOS.COLOR, String(d.color).slice(0, 20));
   if (d.orden != null) setCell_(r, MAZOS.ORDEN, d.orden);
   setCell_(r, MAZOS.UPDATED_AT, Date.now());
   return { mazoId: d.mazoId };
@@ -497,11 +495,12 @@ function deleteDeck_(email, d) {
     sheet.getRange(row, MAZOS.BORRADO).setValue(true);
     sheet.getRange(row, MAZOS.UPDATED_AT).setValue(Date.now());
   }
-  // Cascada: soft-delete de todas sus tarjetas
+  // Cascada: soft-delete de todas sus tarjetas (filtrando por email)
   var cards = getTarjetas_();
   var cData = cards.getDataRange().getValues();
   for (var i = 1; i < cData.length; i++) {
-    if (String(cData[i][TARJETAS.MAZO_ID - 1]) === String(d.mazoId)) {
+    if (String(cData[i][TARJETAS.MAZO_ID - 1]) === String(d.mazoId) &&
+        String(cData[i][TARJETAS.EMAIL - 1]).toLowerCase() === email) {
       cards.getRange(i + 1, TARJETAS.BORRADO).setValue(true);
       cards.getRange(i + 1, TARJETAS.UPDATED_AT).setValue(Date.now());
     }
@@ -533,21 +532,25 @@ function createCards_(email, d) {
     if (!t || !t.id) return;
     var row = findRow_(data, TARJETAS.ID, t.id, email);
     var now = Date.now();
+    var pregunta = String(t.pregunta || '').slice(0, 10000);
+    var respuesta = String(t.respuesta || '').slice(0, 10000);
+    var explicacion = String(t.explicacion || '').slice(0, 5000);
+    var icono = String(t.icono || '').slice(0, 50);
     if (row > 0) {
       // Upsert: sobreescribir texto (LWW simple por UpdatedAt)
       var r = sheet.getRange(row, 1, 1, 14);
-      if (t.icono != null) setCell_(r, TARJETAS.ICONO, t.icono);
-      if (t.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, t.pregunta);
-      if (t.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, t.respuesta);
-      if (t.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, t.explicacion);
+      if (t.icono != null) setCell_(r, TARJETAS.ICONO, icono);
+      if (t.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, pregunta);
+      if (t.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, respuesta);
+      if (t.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, explicacion);
       if (t.tipo != null) setCell_(r, TARJETAS.TIPO, t.tipo);
       if (t.opciones != null) setCell_(r, TARJETAS.OPCIONES, JSON.stringify(t.opciones));
       setCell_(r, TARJETAS.UPDATED_AT, now);
       setCell_(r, TARJETAS.BORRADO, false);
     } else {
       sheet.appendRow([
-        t.id, d.mazoId, email, t.icono || '', t.pregunta || '', t.respuesta || '',
-        t.explicacion || '', t.intervalo || 0, t.facilidad || 2.5,
+        t.id, d.mazoId, email, icono, pregunta, respuesta,
+        explicacion, t.intervalo || 0, t.facilidad || 2.5,
         t.proximaRevision || 0, now, false,
         t.tipo || 'tarjeta', t.opciones ? JSON.stringify(t.opciones) : ''
       ]);
@@ -584,16 +587,16 @@ function editCard_(email, d) {
   var sheet = getTarjetas_();
   var data = sheet.getDataRange().getValues();
   var row = findRow_(data, TARJETAS.ID, d.id, email);
-  if (row < 0) throw new Error('Tarjeta no encontrada: ' + d.id);
+  if (row < 0) throw new Error('Tarjeta no encontrada');
   var fila = data[row - 1];
   var serverTs = Number(fila[TARJETAS.UPDATED_AT - 1]) || 0;
   var clientTs = Number(d.updatedAt) || 0;
   if (clientTs < serverTs) return { id: d.id, skipped: 'lww' };
   var r = sheet.getRange(row, 1, 1, 14);
-  if (d.icono != null) setCell_(r, TARJETAS.ICONO, d.icono);
-  if (d.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, d.pregunta);
-  if (d.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, d.respuesta);
-  if (d.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, d.explicacion);
+  if (d.icono != null) setCell_(r, TARJETAS.ICONO, String(d.icono).slice(0, 50));
+  if (d.pregunta != null) setCell_(r, TARJETAS.PREGUNTA, String(d.pregunta).slice(0, 10000));
+  if (d.respuesta != null) setCell_(r, TARJETAS.RESPUESTA, String(d.respuesta).slice(0, 10000));
+  if (d.explicacion != null) setCell_(r, TARJETAS.EXPLICACION, String(d.explicacion).slice(0, 5000));
   if (d.tipo != null) setCell_(r, TARJETAS.TIPO, d.tipo);
   if (d.opciones != null) setCell_(r, TARJETAS.OPCIONES, JSON.stringify(d.opciones));
   setCell_(r, TARJETAS.UPDATED_AT, Math.max(clientTs, serverTs));

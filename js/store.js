@@ -12,7 +12,7 @@ export var Store = {
 
   /** Carga todas las claves una vez (boot). */
   load: function () {
-    [K.EMAIL, K.MC_USERNAME, K.MC_TOKEN, K.DECKS, K.CARDS, K.QUEUE, K.SETTINGS, K.META].forEach(function (key) {
+    [K.EMAIL, K.MC_USERNAME, K.MC_TOKEN, K.SESSION_TS, K.DECKS, K.CARDS, K.QUEUE, K.SETTINGS, K.META].forEach(function (key) {
       try { Store.data[key] = JSON.parse(localStorage.getItem(key)); }
       catch (e) { Store.data[key] = null; }
     });
@@ -38,11 +38,14 @@ export var Store = {
 
   getMcUsername: function () { return Store.data[K.MC_USERNAME] || ''; },
   getMcToken: function () { return Store.data[K.MC_TOKEN] || ''; },
+  getSessionTs: function () { return Store.data[K.SESSION_TS] || 0; },
   setMcAuth: function (username, apiToken) {
     Store.data[K.MC_USERNAME] = username || '';
     Store.data[K.MC_TOKEN] = apiToken || '';
+    Store.data[K.SESSION_TS] = Date.now();
     Store.save(K.MC_USERNAME);
     Store.save(K.MC_TOKEN);
+    Store.save(K.SESSION_TS);
   },
 
   decks: function () { return Store.data[K.DECKS] || []; },

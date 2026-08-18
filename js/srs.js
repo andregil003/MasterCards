@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
 import { Store, cardById, upsertCardLocal, removeCardLocal } from './store.js';
 import { SyncEngine } from './sync-engine.js';
 import { t } from './i18n.js';
-import { toast, todayKey, md } from './utils.js';
+import { toast, todayKey, md, sanitizeIcon, sanitizeColor } from './utils.js';
 import { UI, show } from './ui.js';
 
 // ------------------------------------------------------------------
@@ -188,9 +188,9 @@ export var Study = {
     fc.classList.remove('editing');
     document.getElementById('edit-panel').hidden = true;
     Study.renderAnswers(card);
-    document.getElementById('card-icon').className = 'fa-solid fa-' + (card.icono || 'bolt') + ' card-deco';
+    document.getElementById('card-icon').className = 'fa-solid fa-' + sanitizeIcon(card.icono || 'bolt') + ' card-deco';
     var deckFor = Store.deckById(card.mazoId);
-    document.getElementById('card-icon').style.color = (deckFor && deckFor.iconoColor) || '#22c55e';
+    document.getElementById('card-icon').style.color = sanitizeColor((deckFor && deckFor.iconoColor) || '#22c55e');
     document.getElementById('card-q').innerHTML = md(card.pregunta);
     document.getElementById('card-a').innerHTML = md(card.respuesta);
     var why = document.getElementById('card-e');

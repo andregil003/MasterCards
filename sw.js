@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-const CACHE = 'mastercards-v9';
+const CACHE = 'mastercards-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,7 @@ const ASSETS = [
   './js/srs.js',
   './js/ui.js',
   './js/pwa.js',
+  './js/qr.js',
   './manifest.json',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
@@ -42,7 +43,11 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(ASSETS))
+      .then((cache) => {
+        return Promise.allSettled(
+          ASSETS.map((url) => cache.add(url).catch(() => {}))
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -66,6 +71,10 @@ self.addEventListener('fetch', (event) => {
   let protocol = '';
   try { protocol = new URL(req.url).protocol; } catch (e) { protocol = ''; }
   if (protocol !== 'http:' && protocol !== 'https:') return;
+
+  // No cachear peticiones al backend GAS ni a Google OAuth
+  const urlStr = req.url;
+  if (urlStr.includes('script.google.com') || urlStr.includes('googleapis.com')) return;
 
   // Navegaciones: network-first con fallback al índice (offline).
   if (req.mode === 'navigate') {

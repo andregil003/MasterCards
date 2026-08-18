@@ -2,6 +2,7 @@
   "name": "MasterCards",
   "short_name": "MasterCards",
   "description": "Flashcards Offline-First estilo Anki con sincronización a Google Sheets.",
+  "categories": ["education", "productivity"],
   "lang": "es",
   "start_url": "./",
   "scope": "./",

@@ -74,15 +74,16 @@ export var SyncEngine = {
       });
   },
 
-  /** Descarga TODOS los datos del usuario desde el backend. */
+  /** Descarga TODOS los datos del usuario desde el backend (POST, token en body). */
   pull: function () {
     if (!navigator.onLine || !CONFIG.SCRIPT_URL) return Promise.resolve();
     var token = Auth.getToken();
     if (!token) return Promise.resolve();
-    var url = CONFIG.SCRIPT_URL +
-      '?email=' + encodeURIComponent(Auth.owner()) +
-      '&token=' + encodeURIComponent(token);
-    return fetch(url)
+    return fetch(CONFIG.SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'pull', token: token })
+    })
       .then(function (res) { return res.json(); })
       .then(function (json) {
         if (json.ok) SyncEngine.merge(json.data);

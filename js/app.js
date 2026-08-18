@@ -12,7 +12,7 @@ import { t, toast, bindModal, bindNameModal, initPasswordToggles, renderGreeting
 import { pwa, isStandalone } from './pwa.js';
 import { I18N } from './i18n.js';
 import { initAuthScreens, updateSecurityUI } from './auth.js';
-import { CONFIG, K } from './config.js';
+import { CONFIG, K, SESSION_TTL } from './config.js';
 
 /** Set version badge text on login and settings screens. */
 function renderVersionBadge() {
@@ -116,6 +116,17 @@ function boot() {
   initPromptCopy();
   initAuthScreens();
   Auth.init();
+
+  // Periodic session TTL check for MC accounts (every 5 min)
+  setInterval(function () {
+    if (Auth.mode === 'mc') {
+      var ts = Store.getSessionTs();
+      if (ts && Date.now() - ts > SESSION_TTL) {
+        toast(t('session_expired'));
+        Auth.logout();
+      }
+    }
+  }, 5 * 60 * 1000);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(function (e) {

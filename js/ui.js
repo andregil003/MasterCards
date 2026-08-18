@@ -9,7 +9,7 @@ import { Store } from './store.js';
 import { Auth } from './auth.js';
 import { SyncEngine } from './sync-engine.js';
 import { Study, TIPOS_CARD, tipoUsaOpciones, normalizarOpciones, parseLineasOpciones, parseEntero, respuestaNumValida, esNueva, estaVencida, uuid } from './srs.js';
-import { t, toast, esc, md, withAlpha, downloadJSON, copyText, renderGreeting, maybeAskName, confirmBox } from './utils.js';
+import { t, toast, esc, md, withAlpha, downloadJSON, copyText, renderGreeting, maybeAskName, confirmBox, sanitizeIcon, sanitizeColor } from './utils.js';
 import { pwa, isStandalone } from './pwa.js';
 import { updateSecurityUI } from './auth.js';
 import { I18N } from './i18n.js';
@@ -130,8 +130,8 @@ export var UI = {
       if (s.nuev) meta.push('<span class="new">' + esc(t('meta_new', { a: s.nuev })) + '</span>');
       if (!meta.length) meta.push('<span>' + esc(t('meta_total', { a: s.total })) + '</span>');
       el.innerHTML =
-        '<div class="deck-icon" style="background:' + withAlpha(d.color || '#22c55e', 0.16) + ';border:1px solid ' + withAlpha(d.color || '#22c55e', 0.4) + '">' +
-          '<i class="fa-solid fa-' + (d.icono || 'layer-group') + '" style="color:' + (d.iconoColor || '#22c55e') + '"></i></div>' +
+        '<div class="deck-icon" style="background:' + withAlpha(sanitizeColor(d.color) || '#22c55e', 0.16) + ';border:1px solid ' + withAlpha(sanitizeColor(d.color) || '#22c55e', 0.4) + '">' +
+          '<i class="fa-solid fa-' + sanitizeIcon(d.icono || 'layer-group') + '" style="color:' + sanitizeColor(d.iconoColor || '#22c55e') + '"></i></div>' +
         '<div class="deck-info">' +
           '<div class="deck-name">' + esc(d.nombre) + '</div>' +
           '<div class="deck-meta">' + meta.join(' · ') + '</div></div>' +
