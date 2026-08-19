@@ -6,13 +6,12 @@
 
 import { CONFIG, K } from './config.js';
 import { Store } from './store.js';
-import { Auth } from './auth.js';
+import { Auth, updateSecurityUI } from './auth.js';
 import { SyncEngine } from './sync-engine.js';
 import { Study, TIPOS_CARD, tipoUsaOpciones, normalizarOpciones, parseLineasOpciones, parseEntero, respuestaNumValida, esNueva, estaVencida } from './srs.js';
-import { t, toast, esc, md, withAlpha, downloadJSON, copyText, renderGreeting, maybeAskName, confirmBox, sanitizeIcon, sanitizeColor, uuid } from './utils.js';
+import { toast, esc, md, withAlpha, downloadJSON, copyText, renderGreeting, maybeAskName, confirmBox, sanitizeIcon, sanitizeColor, uuid } from './utils.js';
 import { pwa, isStandalone } from './pwa.js';
-import { updateSecurityUI } from './auth.js';
-import { I18N } from './i18n.js';
+import { t, I18N } from './i18n.js';
 
 export var UI = {
 

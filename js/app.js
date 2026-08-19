@@ -4,14 +4,13 @@
  * ============================================================ */
 
 import { Store } from './store.js';
-import { Auth } from './auth.js';
+import { Auth, initAuthScreens, updateSecurityUI } from './auth.js';
 import { UI, show } from './ui.js';
 import { SyncEngine, initSyncListeners } from './sync-engine.js';
 import { Study } from './srs.js';
-import { t, toast, bindModal, bindNameModal, initPasswordToggles, renderGreeting, maybeAskName, confirmBox, downloadJSON, copyText } from './utils.js';
+import { toast, bindModal, bindNameModal, initPasswordToggles, renderGreeting, maybeAskName, confirmBox, downloadJSON, copyText } from './utils.js';
 import { pwa, isStandalone } from './pwa.js';
-import { I18N } from './i18n.js';
-import { initAuthScreens, updateSecurityUI } from './auth.js';
+import { t, I18N } from './i18n.js';
 import { CONFIG, K, SESSION_TTL } from './config.js';
 
 /** Set version badge text on login and settings screens. */
