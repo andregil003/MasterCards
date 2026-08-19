@@ -128,8 +128,22 @@ function boot() {
   }, 5 * 60 * 1000);
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(function (e) {
+    navigator.serviceWorker.register('./sw.js').then(function (reg) {
+      reg.addEventListener('updatefound', function () {
+        var newSw = reg.installing;
+        if (!newSw) return;
+        newSw.addEventListener('statechange', function () {
+          if (newSw.state === 'activated' && navigator.serviceWorker.controller) {
+            location.reload();
+          }
+        });
+      });
+    }).catch(function (e) {
       console.warn('SW no registrado:', e);
+    });
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!refreshing) { refreshing = true; location.reload(); }
     });
   }
 

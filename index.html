@@ -53,7 +53,7 @@
         <form id="form-login-mc" autocomplete="on">
           <label class="field-label" for="mc-username" data-i18n="username">Usuario</label>
           <input id="mc-username" class="input" type="text" autocomplete="username" maxlength="30"
-                 placeholder="usuario" required />
+                 placeholder="usuario" data-i18n-placeholder="username_ph" required />
           <label class="field-label" for="mc-password" data-i18n="password">Contraseña</label>
           <div class="pw-field">
             <input id="mc-password" class="input" type="password" autocomplete="current-password" required
@@ -78,17 +78,20 @@
         <h2 data-i18n="create_account">Crear cuenta</h2>
         <form id="form-register" autocomplete="on">
           <label class="field-label" for="reg-username" data-i18n="username">Usuario</label>
-          <input id="reg-username" class="input" type="text" autocomplete="username" maxlength="30" required />
+          <input id="reg-username" class="input" type="text" autocomplete="username" maxlength="30"
+                 placeholder="usuario" data-i18n-placeholder="username_ph" required />
           <p class="muted small" data-i18n="username_hint">3–30 caracteres: letras, números, . _ -</p>
           <label class="field-label" for="reg-password" data-i18n="password">Contraseña</label>
           <div class="pw-field">
-            <input id="reg-password" class="input" type="password" autocomplete="new-password" required />
+            <input id="reg-password" class="input" type="password" autocomplete="new-password" required
+                   placeholder="•••••••" />
             <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
           </div>
           <div id="reg-pw-meter" class="pw-meter"></div>
           <label class="field-label" for="reg-password2" data-i18n="repeat_password">Repetir contraseña</label>
           <div class="pw-field">
-            <input id="reg-password2" class="input" type="password" autocomplete="new-password" required />
+            <input id="reg-password2" class="input" type="password" autocomplete="new-password" required
+                   placeholder="•••••••" />
             <button type="button" class="pw-toggle" tabindex="-1" aria-label="Mostrar contraseña" data-i18n-aria="pw_show"><i class="fa-solid fa-eye"></i></button>
           </div>
           <p id="reg-error" class="error hidden"></p>
@@ -143,7 +146,8 @@
         <h2 data-i18n="recover_title">Recuperar cuenta</h2>
         <form id="form-recover" autocomplete="on">
           <label class="field-label" for="rec-username" data-i18n="username">Usuario</label>
-          <input id="rec-username" class="input" type="text" autocomplete="username" maxlength="30" required />
+          <input id="rec-username" class="input" type="text" autocomplete="username" maxlength="30"
+                 placeholder="usuario" data-i18n-placeholder="username_ph" required />
           <label class="field-label" data-i18n="recover_method">Método de recuperación</label>
           <div class="segmented" id="seg-recover-method">
             <button data-value="backup" class="active" data-i18n="recover_method_backup">Código de respaldo</button>
@@ -481,7 +485,8 @@
     <div class="modal-box">
       <h3 data-i18n="name_modal_title">¿Cómo te llamas?</h3>
       <p class="muted" data-i18n="name_modal_text">Lo usaremos para saludarte en el inicio. Puedes cambiarlo en Ajustes.</p>
-      <input id="name-modal-input" class="input" type="text" maxlength="40" autocomplete="nickname" />
+      <input id="name-modal-input" class="input" type="text" maxlength="40" autocomplete="nickname"
+             placeholder="Ej: Ana" data-i18n-placeholder="your_name_ph" />
       <div class="row-gap">
         <button id="name-modal-skip" class="btn ghost" data-i18n="name_modal_skip">Omitir</button>
         <button id="name-modal-ok" class="btn primary" data-i18n="save">Guardar</button>
